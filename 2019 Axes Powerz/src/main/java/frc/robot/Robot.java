@@ -37,15 +37,27 @@ public class Robot extends TimedRobot {
   NetworkTableEntry ty = table.getEntry("ty");
   // area of the object
   NetworkTableEntry ta = table.getEntry("ta");
-  // next 4 are lengths of longest and shortest sides, and horizontal and vertical distances
+  // next 4 are lengths of longest and shortest sides, and horizontal and vertical
+  // distances
   NetworkTableEntry tlong = table.getEntry("tlong");
   NetworkTableEntry tshort = table.getEntry("tshort");
   NetworkTableEntry tvert = table.getEntry("tvert");
   NetworkTableEntry thor = table.getEntry("thor");
-  // this tells us what "pipeline" we are on, basically different settings for the camera
+  // this tells us what "pipeline" we are on, basically different settings for the
+  // camera
   NetworkTableEntry getpipe = table.getEntry("getpipe");
+  // skew or rotation of target
+  NetworkTableEntry ts = table.getEntry("ts");
   private MecanumDrive letsRoll;
   private XboxController Xbox;
+  double ledMode = 0;
+  double speedScaling = 0.5;
+  boolean rotationButton;
+  boolean strafeButton;
+  Spark rearleft;
+  Spark rearright;
+  Spark frontleft;
+  Spark frontright;
 
   /**
    * This function is run when the robot is first started up and should be used
@@ -56,10 +68,10 @@ public class Robot extends TimedRobot {
     m_chooser.setDefaultOption("Default Auto", kDefaultAuto);
     m_chooser.addOption("My Auto", kCustomAuto);
     SmartDashboard.putData("Auto choices", m_chooser);
-    Spark rearleft = new Spark(3);
-    Spark rearright = new Spark(0);
-    Spark frontleft = new Spark(2);
-    Spark frontright = new Spark(1);
+    rearleft = new Spark(3);
+    rearright = new Spark(0);
+    frontleft = new Spark(2);
+    frontright = new Spark(1);
     Xbox = new XboxController(0);
     letsRoll = new MecanumDrive(frontleft, rearleft, frontright, rearright);
     rearright.setSafetyEnabled(false);
@@ -85,14 +97,70 @@ public class Robot extends TimedRobot {
     double area = ta.getDouble(0.0);
     double longestSide = tlong.getDouble(0.0);
     double shortestSide = tshort.getDouble(0.0);
-    double targetWidth  = thor.getDouble(0.0);
+    double targetWidth = thor.getDouble(0.0);
     double targetHeight = tvert.getDouble(0.0);
     double pipeline = getpipe.getDouble(0.0);
-    SmartDashboard.putNumber("LimelightX", x); //displays x axis from target
-    SmartDashboard.putNumber("LimelightY", y); //displays y axis from target
-    SmartDashboard.putNumber("LimelightArea", area); //displays area of target
-    letsRoll.driveCartesian(Xbox.getX(Hand.kLeft), Xbox.getY(Hand.kLeft)*-1,
-    Xbox.getX(Hand.kRight), 0.0);
+    double targetRotation = ts.getDouble(0.0);
+    SmartDashboard.putNumber("LimelightX", x); // displays x axis from target
+    SmartDashboard.putNumber("LimelightY", y); // displays y axis from target
+    SmartDashboard.putNumber("LimelightArea", area); // displays area of target
+    SmartDashboard.putNumber("LimelightRotation", targetRotation); // displays rotation of target
+    NetworkTableInstance.getDefault().getTable("limelight").getEntry("ledMode").setNumber(0);
+    letsRoll.driveCartesian(Xbox.getX(Hand.kLeft) * speedScaling, Xbox.getY(Hand.kLeft) * -1 * speedScaling,
+        Xbox.getX(Hand.kRight) * speedScaling, 0.0);
+    rotationButton = Xbox.getRawButton(3); // x button
+    strafeButton = Xbox.getRawButton(4); // y button
+    if (rotationButton == true) {
+      autoCorrect(targetRotation, x);
+    }
+    if (strafeButton == true) {
+      strafeCorrect(targetRotation, x);
+    }
+  }
+
+  private void autoCorrect(double targetRotation, double x) {
+    if (Math.abs(targetRotation) > 45) {
+      frontleft.set(-0.5);
+      frontright.set(-0.5);
+      rearleft.set(-0.5);
+      rearright.set(-0.5);
+    } else if (Math.abs(targetRotation) < 45 && Math.abs(targetRotation) > 0) {
+      frontleft.set(0.5);
+      frontright.set(0.5);
+      rearleft.set(0.5);
+      rearright.set(0.5);
+    } else if (targetRotation == 0) {
+      frontleft.set(0);
+      frontright.set(0);
+      rearleft.set(0);
+      rearright.set(0);
+    }
+    if (x < 0) {
+      frontleft.set(-0.5);
+      frontright.set(-0.5);
+      rearleft.set(0.5);
+      rearright.set(0.5);
+    } else if (x > 0) {
+      frontleft.set(0.5);
+      frontright.set(0.5);
+      rearleft.set(-0.5);
+      rearright.set(-0.5);
+    } else {
+      frontleft.set(0);
+      frontright.set(0);
+      rearleft.set(0);
+      rearright.set(0);
+    }
+
+  }
+
+  private void strafeCorrect(double targetRotation, double x) {
+    if (Math.abs(targetRotation) < 45 && Math.abs(targetRotation) > 0 && x > 0) {
+
+      frontright.set(0.25);
+      rearleft.set(0.5);
+      // rearright.set(0.5);
+    }
   }
 
   /**
@@ -136,7 +204,7 @@ public class Robot extends TimedRobot {
    */
   @Override
   public void teleopPeriodic() {
-  
+
   }
 
   /**
