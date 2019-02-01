@@ -53,7 +53,8 @@ public class Robot extends TimedRobot {
   double ledMode = 0;
   double speedScaling = 0.5;
   boolean rotationButton;
-  boolean strafeButton;
+  boolean strafeButton; 
+  float Kp;
   Spark rearleft;
   Spark rearright;
   Spark frontleft;
@@ -119,47 +120,63 @@ public class Robot extends TimedRobot {
   }
 
   private void autoCorrect(double targetRotation, double x) {
-    if (Math.abs(targetRotation) > 45) {
-      frontleft.set(-0.5);
-      frontright.set(-0.5);
-      rearleft.set(-0.5);
-      rearright.set(-0.5);
-    } else if (Math.abs(targetRotation) < 45 && Math.abs(targetRotation) > 0) {
-      frontleft.set(0.5);
-      frontright.set(0.5);
-      rearleft.set(0.5);
-      rearright.set(0.5);
+    if (Math.abs(targetRotation) > 45 && Math.abs(targetRotation) < 89) {
+      // arc right
+      letsRoll.driveCartesian(.5, 0.0,
+      -.25, 0.0);
+    } else if (Math.abs(targetRotation) < 45 && Math.abs(targetRotation) > 1) {
+      letsRoll.driveCartesian(-.5, 0.0,
+      .25, 0.0);
+      //arc left
     } else if (targetRotation == 0) {
-      frontleft.set(0);
-      frontright.set(0);
-      rearleft.set(0);
-      rearright.set(0);
+      if (x < -1) {
+        frontleft.set(-0.5);
+        frontright.set(-0.5);
+        rearleft.set(0.5);
+        rearright.set(0.5);
+      } else if (x > 1) {
+        frontleft.set(0.5);
+        frontright.set(0.5);
+        rearleft.set(-0.5);
+        rearright.set(-0.5);
+      } else {
+        frontleft.set(0);
+        frontright.set(0);
+        rearleft.set(0);
+        rearright.set(0);
+      }
     }
-    if (x < 0) {
-      frontleft.set(-0.5);
-      frontright.set(-0.5);
-      rearleft.set(0.5);
-      rearright.set(0.5);
-    } else if (x > 0) {
-      frontleft.set(0.5);
-      frontright.set(0.5);
-      rearleft.set(-0.5);
-      rearright.set(-0.5);
-    } else {
-      frontleft.set(0);
-      frontright.set(0);
-      rearleft.set(0);
-      rearright.set(0);
-    }
+    
 
   }
 
+ /*  private void autoCorrect1(double targetRotation, double x) {
+    float Kp = -0.1f; //proportional control
+
+    std::shared_ptr::<NetworkTable> table = NetworkTable::GetTable("limelight");
+//    std::shared_ptr::<NetworkTable> table = NetworkTable::GetTable("limelight"); 
+    float KpDistance = -0/-0.1f;
+    float current_distance = Estimate_Distance();
+
+    if (joystick->getRawButton(3))
+  {
+
+    float heading_error = -tx;
+    steering_adjust = Kp * tx;
+    
+    left_command+=steering_adjust;
+    right_command-=steering_adjust;
+  }
+
+
+  } */
+
   private void strafeCorrect(double targetRotation, double x) {
     if (Math.abs(targetRotation) < 45 && Math.abs(targetRotation) > 0 && x > 0) {
-
-      frontright.set(0.25);
+      frontleft.set(0.5);
+      // frontright.set(0.0);
       rearleft.set(0.5);
-      // rearright.set(0.5);
+      rearright.set(0.5);
     }
   }
 
