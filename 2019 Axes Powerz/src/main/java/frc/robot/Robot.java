@@ -51,9 +51,8 @@ public class Robot extends TimedRobot {
   private MecanumDrive letsRoll;
   private XboxController Xbox;
   double ledMode = 0;
-  double speedScaling = 0.5;
-  boolean rotationButton;
-  boolean strafeButton; 
+  boolean rotationButton = false;
+  boolean strafeButton;
   float Kp;
   Spark rearleft;
   Spark rearright;
@@ -92,6 +91,7 @@ public class Robot extends TimedRobot {
    */
   @Override
   public void robotPeriodic() {
+
     // these put our NetworkTableEntries into variables
     double x = tx.getDouble(0.0);
     double y = ty.getDouble(0.0);
@@ -107,69 +107,69 @@ public class Robot extends TimedRobot {
     SmartDashboard.putNumber("LimelightArea", area); // displays area of target
     SmartDashboard.putNumber("LimelightRotation", targetRotation); // displays rotation of target
     NetworkTableInstance.getDefault().getTable("limelight").getEntry("ledMode").setNumber(0);
-    letsRoll.driveCartesian(Xbox.getX(Hand.kLeft) * speedScaling, Xbox.getY(Hand.kLeft) * -1 * speedScaling,
-        Xbox.getX(Hand.kRight) * speedScaling, 0.0);
-    rotationButton = Xbox.getRawButton(3); // x button
     strafeButton = Xbox.getRawButton(4); // y button
-    if (rotationButton == true) {
-      autoCorrect(targetRotation, x);
+    if (Xbox.getXButtonPressed()) {
+      rotationButton = true;
     }
+      if (rotationButton == true) {
+      autoCorrect(targetRotation, x, area);
+    }
+     else {
+
+    letsRoll.driveCartesian(Xbox.getX(Hand.kLeft), Xbox.getY(Hand.kLeft) * -1,
+        Xbox.getX(Hand.kRight), 0.0);
+    }
+
+    
     if (strafeButton == true) {
       strafeCorrect(targetRotation, x);
     }
   }
 
-  private void autoCorrect(double targetRotation, double x) {
+  private void autoCorrect(double targetRotation, double x, double area) {
     if (Math.abs(targetRotation) > 45 && Math.abs(targetRotation) < 89) {
       // arc right
-      letsRoll.driveCartesian(.5, 0.0,
-      -.25, 0.0);
+      letsRoll.driveCartesian(.3, 0.0, -.125, 0.0);
     } else if (Math.abs(targetRotation) < 45 && Math.abs(targetRotation) > 1) {
-      letsRoll.driveCartesian(-.5, 0.0,
-      .25, 0.0);
-      //arc left
-    } else if (targetRotation == 0) {
+      letsRoll.driveCartesian(-.3, 0.0, .125, 0.0);
+      // arc left
+    } else if (targetRotation < -88 || targetRotation > -2) {
       if (x < -1) {
-        frontleft.set(-0.5);
-        frontright.set(-0.5);
-        rearleft.set(0.5);
-        rearright.set(0.5);
+        letsRoll.driveCartesian(-.36, 0.0, 0, 0.0);
       } else if (x > 1) {
-        frontleft.set(0.5);
-        frontright.set(0.5);
-        rearleft.set(-0.5);
-        rearright.set(-0.5);
-      } else {
+        letsRoll.driveCartesian(.36, 0.0, 0, 0.0);
+      } else if (area < .52) {
+        letsRoll.driveCartesian(0, .5, 0, 0.0);
+      }
+      else {
         frontleft.set(0);
         frontright.set(0);
         rearleft.set(0);
         rearright.set(0);
+        rotationButton = false;
       }
     }
-    
 
   }
 
- /*  private void autoCorrect1(double targetRotation, double x) {
-    float Kp = -0.1f; //proportional control
-
-    std::shared_ptr::<NetworkTable> table = NetworkTable::GetTable("limelight");
-//    std::shared_ptr::<NetworkTable> table = NetworkTable::GetTable("limelight"); 
-    float KpDistance = -0/-0.1f;
-    float current_distance = Estimate_Distance();
-
-    if (joystick->getRawButton(3))
-  {
-
-    float heading_error = -tx;
-    steering_adjust = Kp * tx;
-    
-    left_command+=steering_adjust;
-    right_command-=steering_adjust;
-  }
-
-
-  } */
+  /*
+   * private void autoCorrect1(double targetRotation, double x) { float Kp =
+   * -0.1f; //proportional control
+   * 
+   * std::shared_ptr::<NetworkTable> table = NetworkTable::GetTable("limelight");
+   * // std::shared_ptr::<NetworkTable> table =
+   * NetworkTable::GetTable("limelight"); float KpDistance = -0/-0.1f; float
+   * current_distance = Estimate_Distance();
+   * 
+   * if (joystick->getRawButton(3)) {
+   * 
+   * float heading_error = -tx; steering_adjust = Kp * tx;
+   * 
+   * left_command+=steering_adjust; right_command-=steering_adjust; }
+   * 
+   * 
+   * }
+   */
 
   private void strafeCorrect(double targetRotation, double x) {
     if (Math.abs(targetRotation) < 45 && Math.abs(targetRotation) > 0 && x > 0) {
