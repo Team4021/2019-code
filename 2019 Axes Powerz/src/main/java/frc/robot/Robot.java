@@ -54,6 +54,7 @@ public class Robot extends TimedRobot {
   boolean rotationButtonLow = false;
   boolean rotationButtonMid = false;
   boolean rotationButtonTop = false;
+  boolean panelPickupButton = false;
   boolean strafeButton;
   boolean panelVariable;
   float Kp;
@@ -94,7 +95,6 @@ public class Robot extends TimedRobot {
    */
   @Override
   public void robotPeriodic() {
-
     // these put our NetworkTableEntries into variables
     double x = tx.getDouble(0.0);
     double y = ty.getDouble(0.0);
@@ -114,15 +114,21 @@ public class Robot extends TimedRobot {
     if (Xbox.getXButtonPressed()) {
       rotationButtonTop = true;
     }  // starts panel place on top
-    else if (Xbox.getYButtonPressed()){
+    if (Xbox.getYButtonPressed()){
       rotationButtonMid = true;
     }  // starts panel place on Mid
-    else if (Xbox.getBButtonPressed()) {
+    if (Xbox.getBButtonPressed()) {
       rotationButtonLow = true;
     }  // starts panel place on Low
-    else if (Xbox.getAButtonPressed()) {
-      panelPickup();
+    if (Xbox.getAButtonPressed()) {
+      panelPickupButton = true;
     }  // starts panel pickup
+    if (Xbox.getRawAxis(3)> .05 || Xbox.getRawAxis(2) > .05) {
+      rotationButtonLow = false;
+      rotationButtonMid = false;
+      rotationButtonTop = false;
+      panelPickupButton = false;
+    }
 
     if (rotationButtonTop == true) {
       autoCorrectTop(targetRotation, x, area);
@@ -133,13 +139,12 @@ public class Robot extends TimedRobot {
     else if (rotationButtonLow == true) {
       autoCorrectLow(targetRotation, x, area);
     }
+    else if (panelPickupButton == true) {
+      panelPickup();
+    }
      else {
     letsRoll.driveCartesian(Xbox.getX(Hand.kLeft), Xbox.getY(Hand.kLeft) * -1,
         Xbox.getX(Hand.kRight), 0.0); // gives us control
-    }
-
-    if (strafeButton == true) {
-      strafeCorrect(targetRotation, x);
     }
   }
 
@@ -210,7 +215,6 @@ public class Robot extends TimedRobot {
         rotationButtonTop = false;
       }
     }
-
   }
   private void autoCorrectMid(double targetRotation, double x, double area) {
     if (Math.abs(targetRotation) > 45 && Math.abs(targetRotation) < 89) {
@@ -260,18 +264,9 @@ public class Robot extends TimedRobot {
         rotationButtonLow = false;
       }
     }
-
   }
   private void panelPickup() {
 
   }
-  
-  private void strafeCorrect(double targetRotation, double x) {
-    if (Math.abs(targetRotation) < 45 && Math.abs(targetRotation) > 0 && x > 0) {
-      frontleft.set(0.5);
-      // frontright.set(0.0);
-      rearleft.set(0.5);
-      rearright.set(0.5);
-    }
-  }
+
 }
