@@ -51,8 +51,11 @@ public class Robot extends TimedRobot {
   private MecanumDrive letsRoll;
   private XboxController Xbox;
   double ledMode = 0;
-  boolean rotationButton = false;
+  boolean rotationButtonLow = false;
+  boolean rotationButtonMid = false;
+  boolean rotationButtonTop = false;
   boolean strafeButton;
+  boolean panelVariable;
   float Kp;
   Spark rearleft;
   Spark rearright;
@@ -109,76 +112,37 @@ public class Robot extends TimedRobot {
     NetworkTableInstance.getDefault().getTable("limelight").getEntry("ledMode").setNumber(0);
     strafeButton = Xbox.getRawButton(4); // y button
     if (Xbox.getXButtonPressed()) {
-      rotationButton = true;
+      rotationButtonTop = true;
+    }  // starts panel place on top
+    else if (Xbox.getYButtonPressed()){
+      rotationButtonMid = true;
+    }  // starts panel place on Mid
+    else if (Xbox.getBButtonPressed()) {
+      rotationButtonLow = true;
+    }  // starts panel place on Low
+    else if (Xbox.getAButtonPressed()) {
+      panelPickup();
+    }  // starts panel pickup
+
+    if (rotationButtonTop == true) {
+      autoCorrectTop(targetRotation, x, area);
+    } 
+    else if (rotationButtonMid == true){
+      autoCorrectMid(targetRotation, x, area);
     }
-      if (rotationButton == true) {
-      autoCorrect(targetRotation, x, area);
+    else if (rotationButtonLow == true) {
+      autoCorrectLow(targetRotation, x, area);
     }
      else {
-
     letsRoll.driveCartesian(Xbox.getX(Hand.kLeft), Xbox.getY(Hand.kLeft) * -1,
-        Xbox.getX(Hand.kRight), 0.0);
+        Xbox.getX(Hand.kRight), 0.0); // gives us control
     }
 
-    
     if (strafeButton == true) {
       strafeCorrect(targetRotation, x);
     }
   }
 
-  private void autoCorrect(double targetRotation, double x, double area) {
-    if (Math.abs(targetRotation) > 45 && Math.abs(targetRotation) < 89) {
-      // arc right
-      letsRoll.driveCartesian(.3, 0.0, -.125, 0.0);
-    } else if (Math.abs(targetRotation) < 45 && Math.abs(targetRotation) > 1) {
-      letsRoll.driveCartesian(-.3, 0.0, .125, 0.0);
-      // arc left
-    } else if (targetRotation < -88 || targetRotation > -2) {
-      if (x < -1) {
-        letsRoll.driveCartesian(-.36, 0.0, 0, 0.0);
-      } else if (x > 1) {
-        letsRoll.driveCartesian(.36, 0.0, 0, 0.0);
-      } else if (area < .52) {
-        letsRoll.driveCartesian(0, .5, 0, 0.0);
-      }
-      else {
-        frontleft.set(0);
-        frontright.set(0);
-        rearleft.set(0);
-        rearright.set(0);
-        rotationButton = false;
-      }
-    }
-
-  }
-
-  /*
-   * private void autoCorrect1(double targetRotation, double x) { float Kp =
-   * -0.1f; //proportional control
-   * 
-   * std::shared_ptr::<NetworkTable> table = NetworkTable::GetTable("limelight");
-   * // std::shared_ptr::<NetworkTable> table =
-   * NetworkTable::GetTable("limelight"); float KpDistance = -0/-0.1f; float
-   * current_distance = Estimate_Distance();
-   * 
-   * if (joystick->getRawButton(3)) {
-   * 
-   * float heading_error = -tx; steering_adjust = Kp * tx;
-   * 
-   * left_command+=steering_adjust; right_command-=steering_adjust; }
-   * 
-   * 
-   * }
-   */
-
-  private void strafeCorrect(double targetRotation, double x) {
-    if (Math.abs(targetRotation) < 45 && Math.abs(targetRotation) > 0 && x > 0) {
-      frontleft.set(0.5);
-      // frontright.set(0.0);
-      rearleft.set(0.5);
-      rearright.set(0.5);
-    }
-  }
 
   /**
    * This autonomous (along with the chooser code above) shows how to select
@@ -205,16 +169,8 @@ public class Robot extends TimedRobot {
    */
   @Override
   public void autonomousPeriodic() {
-    switch (m_autoSelected) {
-    case kCustomAuto:
-      // Put custom auto code here
-      break;
-    case kDefaultAuto:
-    default:
-      // Put default auto code here
-      break;
     }
-  }
+  
 
   /**
    * This function is called periodically during operator control.
@@ -229,5 +185,93 @@ public class Robot extends TimedRobot {
    */
   @Override
   public void testPeriodic() {
+  }
+
+  private void autoCorrectTop(double targetRotation, double x, double area) {
+    if (Math.abs(targetRotation) > 45 && Math.abs(targetRotation) < 89) {
+      // arc right
+      letsRoll.driveCartesian(.3, 0.0, -.125, 0.0);
+    } else if (Math.abs(targetRotation) < 45 && Math.abs(targetRotation) > 1) {
+      letsRoll.driveCartesian(-.3, 0.0, .125, 0.0);
+      // arc left
+    } else if (targetRotation < -88 || targetRotation > -2) {
+      if (x < -1) {
+        letsRoll.driveCartesian(-.36, 0.0, 0, 0.0);
+      } else if (x > 1) {
+        letsRoll.driveCartesian(.36, 0.0, 0, 0.0);
+      } else if (area < .52 && area > 0) {
+        letsRoll.driveCartesian(0, .5, 0, 0.0);
+      }
+      else {
+        frontleft.set(0);
+        frontright.set(0);
+        rearleft.set(0);
+        rearright.set(0);
+        rotationButtonTop = false;
+      }
+    }
+
+  }
+  private void autoCorrectMid(double targetRotation, double x, double area) {
+    if (Math.abs(targetRotation) > 45 && Math.abs(targetRotation) < 89) {
+      // arc right
+      letsRoll.driveCartesian(.3, 0.0, -.125, 0.0);
+    } else if (Math.abs(targetRotation) < 45 && Math.abs(targetRotation) > 1) {
+      letsRoll.driveCartesian(-.3, 0.0, .125, 0.0);
+      // arc left
+    } else if (targetRotation < -88 || targetRotation > -2) {
+      if (x < -1) {
+        letsRoll.driveCartesian(-.36, 0.0, 0, 0.0);
+      } else if (x > 1) {
+        letsRoll.driveCartesian(.36, 0.0, 0, 0.0);
+      } else if (area < .52 && area > 0) {
+        letsRoll.driveCartesian(0, .5, 0, 0.0);
+      }
+      else {
+        frontleft.set(0);
+        frontright.set(0);
+        rearleft.set(0);
+        rearright.set(0);
+        rotationButtonMid = false;
+      }
+    }
+
+  }
+  private void autoCorrectLow(double targetRotation, double x, double area) {
+    if (Math.abs(targetRotation) > 45 && Math.abs(targetRotation) < 89) {
+      // arc right
+      letsRoll.driveCartesian(.3, 0.0, -.125, 0.0);
+    } else if (Math.abs(targetRotation) < 45 && Math.abs(targetRotation) > 1) {
+      letsRoll.driveCartesian(-.3, 0.0, .125, 0.0);
+      // arc left
+    } else if (targetRotation < -88 || targetRotation > -2) {
+      if (x < -1) {
+        letsRoll.driveCartesian(-.36, 0.0, 0, 0.0);
+      } else if (x > 1) {
+        letsRoll.driveCartesian(.36, 0.0, 0, 0.0);
+      } else if (area < .52 && area > 0) {
+        letsRoll.driveCartesian(0, .5, 0, 0.0);
+      }
+      else {
+        frontleft.set(0);
+        frontright.set(0);
+        rearleft.set(0);
+        rearright.set(0);
+        rotationButtonLow = false;
+      }
+    }
+
+  }
+  private void panelPickup() {
+
+  }
+  
+  private void strafeCorrect(double targetRotation, double x) {
+    if (Math.abs(targetRotation) < 45 && Math.abs(targetRotation) > 0 && x > 0) {
+      frontleft.set(0.5);
+      // frontright.set(0.0);
+      rearleft.set(0.5);
+      rearright.set(0.5);
+    }
   }
 }
