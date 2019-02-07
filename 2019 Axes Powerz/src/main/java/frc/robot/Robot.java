@@ -123,7 +123,7 @@ public class Robot extends TimedRobot {
     if (Xbox.getAButtonPressed()) {
       panelPickupButton = true;
     }  // starts panel pickup
-    if (Xbox.getRawAxis(3)> .05 || Xbox.getRawAxis(2) > .05) {
+    if (Xbox.getRawAxis(0)> .2 || Xbox.getRawAxis(1) > .2 || Xbox.getRawAxis(0) < -.2 || Xbox.getRawAxis(1) < -.2) {
       rotationButtonLow = false;
       rotationButtonMid = false;
       rotationButtonTop = false;
