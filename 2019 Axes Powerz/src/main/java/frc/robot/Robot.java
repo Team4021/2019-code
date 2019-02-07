@@ -17,6 +17,7 @@ import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.GenericHID.Hand;
 import edu.wpi.first.wpilibj.Spark;
 import edu.wpi.first.wpilibj.drive.MecanumDrive;
+import edu.wpi.first.wpilibj.Timer;
 
 /**
  * The VM is configured to automatically run this class, and to call the
@@ -55,6 +56,7 @@ public class Robot extends TimedRobot {
   boolean rotationButtonMid = false;
   boolean rotationButtonTop = false;
   boolean panelPickupButton = false;
+  boolean topPanel;
   boolean strafeButton;
   boolean panelVariable;
   float Kp;
@@ -62,6 +64,8 @@ public class Robot extends TimedRobot {
   Spark rearright;
   Spark frontleft;
   Spark frontright;
+  Timer timer;
+  double Time;
 
   /**
    * This function is run when the robot is first started up and should be used
@@ -95,6 +99,7 @@ public class Robot extends TimedRobot {
    */
   @Override
   public void robotPeriodic() {
+    double Time = timer.get();
     // these put our NetworkTableEntries into variables
     double x = tx.getDouble(0.0);
     double y = ty.getDouble(0.0);
@@ -110,7 +115,6 @@ public class Robot extends TimedRobot {
     SmartDashboard.putNumber("LimelightArea", area); // displays area of target
     SmartDashboard.putNumber("LimelightRotation", targetRotation); // displays rotation of target
     NetworkTableInstance.getDefault().getTable("limelight").getEntry("ledMode").setNumber(0);
-    strafeButton = Xbox.getRawButton(4); // y button
     if (Xbox.getXButtonPressed()) {
       rotationButtonTop = true;
     }  // starts panel place on top
@@ -212,9 +216,24 @@ public class Robot extends TimedRobot {
         frontright.set(0);
         rearleft.set(0);
         rearright.set(0);
+        timer.start();
         rotationButtonTop = false;
+        topPanel = true;
       }
     }
+    if (topPanel = true) {
+      if (Time == 0 ) {
+      timer.start();
+      } 
+      else if (Time < 3) {
+      letsRoll.driveCartesian(0, .5, 0);
+      } 
+      else {
+        timer.stop();
+        timer.reset();
+      }
+    }
+
   }
   private void autoCorrectMid(double targetRotation, double x, double area) {
     if (Math.abs(targetRotation) > 45 && Math.abs(targetRotation) < 89) {
