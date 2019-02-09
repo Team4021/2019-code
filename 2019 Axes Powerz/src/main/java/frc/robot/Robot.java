@@ -17,7 +17,8 @@ import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.GenericHID.Hand;
 import edu.wpi.first.wpilibj.Spark;
 import edu.wpi.first.wpilibj.drive.MecanumDrive;
-import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.Encoder;
+//import edu.wpi.first.wpilibj.CounterBase.EncodingType;
 
 /**
  * The VM is configured to automatically run this class, and to call the
@@ -27,8 +28,6 @@ import edu.wpi.first.wpilibj.Timer;
  * project.
  */
 public class Robot extends TimedRobot {
-  private static final String kDefaultAuto = "Default";
-  private static final String kCustomAuto = "My Auto";
   private String m_autoSelected;
   private final SendableChooser<String> m_chooser = new SendableChooser<>();
   // The following line is getting variables from the limelight
@@ -51,21 +50,29 @@ public class Robot extends TimedRobot {
   NetworkTableEntry ts = table.getEntry("ts");
   private MecanumDrive letsRoll;
   private XboxController Xbox;
+  double distance;
   double ledMode = 0;
   boolean rotationButtonLow = false;
   boolean rotationButtonMid = false;
   boolean rotationButtonTop = false;
   boolean panelPickupButton = false;
-  boolean topPanel;
+  boolean forwardTop = false;
+  boolean forwardMid = false;
+  boolean forwardLow = false;
+  boolean forwardPickup = false;
   boolean strafeButton;
   boolean panelVariable;
+  boolean switchLowValue;
+  boolean switchMidValue;
+  boolean switchTopValue;
   float Kp;
   Spark rearleft;
   Spark rearright;
   Spark frontleft;
   Spark frontright;
-  Timer timer;
-  double Time;
+  Spark liftMotor;
+  Encoder encoder1;
+  
 
   /**
    * This function is run when the robot is first started up and should be used
@@ -73,19 +80,27 @@ public class Robot extends TimedRobot {
    */
   @Override
   public void robotInit() {
-    m_chooser.setDefaultOption("Default Auto", kDefaultAuto);
-    m_chooser.addOption("My Auto", kCustomAuto);
+    //Time = 0;
     SmartDashboard.putData("Auto choices", m_chooser);
     rearleft = new Spark(3);
     rearright = new Spark(0);
     frontleft = new Spark(2);
     frontright = new Spark(1);
+    liftMotor = new Spark(4);
     Xbox = new XboxController(0);
     letsRoll = new MecanumDrive(frontleft, rearleft, frontright, rearright);
     rearright.setSafetyEnabled(false);
     rearleft.setSafetyEnabled(false);
     frontright.setSafetyEnabled(false);
     frontleft.setSafetyEnabled(false);
+    liftMotor.setSafetyEnabled(false);
+    encoder1 = new Encoder (0, 1, false, Encoder.EncodingType.k4X);
+    encoder1.setMaxPeriod(.1);
+    encoder1.setMinRate(.01);
+    encoder1.setDistancePerPulse(.045);
+    encoder1.setDistancePerPulse(.062);
+    encoder1.setReverseDirection(false);
+    encoder1.setSamplesToAverage(7);
   }
 
   /**
@@ -99,7 +114,8 @@ public class Robot extends TimedRobot {
    */
   @Override
   public void robotPeriodic() {
-    double Time = timer.get();
+    distance = encoder1.getDistance();
+    System.out.println(distance);
     // these put our NetworkTableEntries into variables
     double x = tx.getDouble(0.0);
     double y = ty.getDouble(0.0);
@@ -108,7 +124,7 @@ public class Robot extends TimedRobot {
     double shortestSide = tshort.getDouble(0.0);
     double targetWidth = thor.getDouble(0.0);
     double targetHeight = tvert.getDouble(0.0);
-    double pipeline = getpipe.getDouble(0.0);
+    double pipeline = getpipe.getDouble(0.0); 
     double targetRotation = ts.getDouble(0.0);
     SmartDashboard.putNumber("LimelightX", x); // displays x axis from target
     SmartDashboard.putNumber("LimelightY", y); // displays y axis from target
@@ -117,41 +133,46 @@ public class Robot extends TimedRobot {
     NetworkTableInstance.getDefault().getTable("limelight").getEntry("ledMode").setNumber(0);
     if (Xbox.getXButtonPressed()) {
       rotationButtonTop = true;
-    }  // starts panel place on top
-    if (Xbox.getYButtonPressed()){
+    } // starts panel place on top
+    if (Xbox.getYButtonPressed()) {
       rotationButtonMid = true;
-    }  // starts panel place on Mid
+    } // starts panel place on Mid
     if (Xbox.getBButtonPressed()) {
       rotationButtonLow = true;
-    }  // starts panel place on Low
+    } // starts panel place on Low 
     if (Xbox.getAButtonPressed()) {
       panelPickupButton = true;
-    }  // starts panel pickup
-    if (Xbox.getRawAxis(0)> .2 || Xbox.getRawAxis(1) > .2 || Xbox.getRawAxis(0) < -.2 || Xbox.getRawAxis(1) < -.2) {
+    } // starts panel pickup
+    if (Xbox.getY(Hand.kLeft) > .4 || Xbox.getX(Hand.kLeft) > .4 || Xbox.getX(Hand.kLeft) < -.4 || Xbox.getY(Hand.kLeft) < -.4) {
       rotationButtonLow = false;
       rotationButtonMid = false;
       rotationButtonTop = false;
       panelPickupButton = false;
-    }
-
-    if (rotationButtonTop == true) {
-      autoCorrectTop(targetRotation, x, area);
+      forwardTop = false;
+      forwardMid = false;
+      forwardLow = false;
+      forwardPickup = false;
     } 
-    else if (rotationButtonMid == true){
-      autoCorrectMid(targetRotation, x, area);
+  
+     if (rotationButtonTop == true || rotationButtonMid == true || rotationButtonLow == true || panelPickupButton == true) {
+      autoCorrect(targetRotation, x, area);
     }
-    else if (rotationButtonLow == true) {
-      autoCorrectLow(targetRotation, x, area);
+     else if (forwardTop == true) {
+      placeTop();
     }
-    else if (panelPickupButton == true) {
-      panelPickup();
+     else if (forwardMid == true) {
+      placeMid();
+    }  
+    else if (forwardLow == true) {
+      placeLow();
+    }  
+    else if (forwardPickup == true) {
+      pickup();
     }
-     else {
-    letsRoll.driveCartesian(Xbox.getX(Hand.kLeft), Xbox.getY(Hand.kLeft) * -1,
-        Xbox.getX(Hand.kRight), 0.0); // gives us control
-    }
+    else {
+      letsRoll.driveCartesian(Xbox.getX(Hand.kLeft), Xbox.getY(Hand.kLeft) * -1, Xbox.getX(Hand.kRight), 0.0); // gives us control
+    } 
   }
-
 
   /**
    * This autonomous (along with the chooser code above) shows how to select
@@ -178,8 +199,7 @@ public class Robot extends TimedRobot {
    */
   @Override
   public void autonomousPeriodic() {
-    }
-  
+  }
 
   /**
    * This function is called periodically during operator control.
@@ -196,7 +216,7 @@ public class Robot extends TimedRobot {
   public void testPeriodic() {
   }
 
-  private void autoCorrectTop(double targetRotation, double x, double area) {
+  private void autoCorrect(double targetRotation, double x, double area) {
     if (Math.abs(targetRotation) > 45 && Math.abs(targetRotation) < 89) {
       // arc right
       letsRoll.driveCartesian(.3, 0.0, -.125, 0.0);
@@ -208,84 +228,67 @@ public class Robot extends TimedRobot {
         letsRoll.driveCartesian(-.36, 0.0, 0, 0.0);
       } else if (x > 1) {
         letsRoll.driveCartesian(.36, 0.0, 0, 0.0);
-      } else if (area < .52 && area > 0) {
+      } else if (area < 1.5 && area > 0) {
         letsRoll.driveCartesian(0, .5, 0, 0.0);
-      }
-      else {
+      } else {
         frontleft.set(0);
         frontright.set(0);
         rearleft.set(0);
         rearright.set(0);
-        timer.start();
+        encoder1.reset();
+        if (rotationButtonTop == true) {
         rotationButtonTop = false;
-        topPanel = true;
-      }
-    }
-    if (topPanel = true) {
-      if (Time == 0 ) {
-      timer.start();
-      } 
-      else if (Time < 3) {
-      letsRoll.driveCartesian(0, .5, 0);
-      } 
-      else {
-        timer.stop();
-        timer.reset();
-      }
-    }
-
-  }
-  private void autoCorrectMid(double targetRotation, double x, double area) {
-    if (Math.abs(targetRotation) > 45 && Math.abs(targetRotation) < 89) {
-      // arc right
-      letsRoll.driveCartesian(.3, 0.0, -.125, 0.0);
-    } else if (Math.abs(targetRotation) < 45 && Math.abs(targetRotation) > 1) {
-      letsRoll.driveCartesian(-.3, 0.0, .125, 0.0);
-      // arc left
-    } else if (targetRotation < -88 || targetRotation > -2) {
-      if (x < -1) {
-        letsRoll.driveCartesian(-.36, 0.0, 0, 0.0);
-      } else if (x > 1) {
-        letsRoll.driveCartesian(.36, 0.0, 0, 0.0);
-      } else if (area < .52 && area > 0) {
-        letsRoll.driveCartesian(0, .5, 0, 0.0);
-      }
-      else {
-        frontleft.set(0);
-        frontright.set(0);
-        rearleft.set(0);
-        rearright.set(0);
-        rotationButtonMid = false;
+        forwardTop = true;
+        } else if (rotationButtonMid == true) {
+          rotationButtonMid = false;
+          forwardMid = true;
+        } else if (rotationButtonLow == true) {
+          rotationButtonLow = false;
+          forwardLow = true;
+        } else if (panelPickupButton == true) {
+          panelPickupButton = false;
+          forwardPickup = true;
+        }
       }
     }
 
   }
-  private void autoCorrectLow(double targetRotation, double x, double area) {
-    if (Math.abs(targetRotation) > 45 && Math.abs(targetRotation) < 89) {
-      // arc right
-      letsRoll.driveCartesian(.3, 0.0, -.125, 0.0);
-    } else if (Math.abs(targetRotation) < 45 && Math.abs(targetRotation) > 1) {
-      letsRoll.driveCartesian(-.3, 0.0, .125, 0.0);
-      // arc left
-    } else if (targetRotation < -88 || targetRotation > -2) {
-      if (x < -1) {
-        letsRoll.driveCartesian(-.36, 0.0, 0, 0.0);
-      } else if (x > 1) {
-        letsRoll.driveCartesian(.36, 0.0, 0, 0.0);
-      } else if (area < .52 && area > 0) {
-        letsRoll.driveCartesian(0, .5, 0, 0.0);
-      }
-      else {
-        frontleft.set(0);
-        frontright.set(0);
-        rearleft.set(0);
-        rearright.set(0);
-        rotationButtonLow = false;
-      }
+
+
+  private void placeTop() {
+    if (distance < 25) {
+      letsRoll.driveCartesian(0, .25, 0);
+    } else {
+      forwardTop = false;
+      letsRoll.driveCartesian(0, 0, 0);
     }
   }
-  private void panelPickup() {
+
+  private void placeMid() {
+    if (distance < 25) {
+      letsRoll.driveCartesian(0, .25, 0);
+    } else {
+      forwardMid = false;
+      letsRoll.driveCartesian(0, 0, 0);
+    }
 
   }
 
+  private void placeLow() {
+    if (distance < 25) {
+      letsRoll.driveCartesian(0, .25, 0);
+    } else {
+      forwardLow = false;
+      letsRoll.driveCartesian(0, 0, 0);
+    }
+
+  }
+  private void pickup() {
+    if (distance < 25) {
+      letsRoll.driveCartesian(0, .25, 0);
+    } else {
+      forwardPickup = false;
+      letsRoll.driveCartesian(0, 0, 0);
+    }
+  }
 }
