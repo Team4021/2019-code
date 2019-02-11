@@ -18,7 +18,6 @@ import edu.wpi.first.wpilibj.GenericHID.Hand;
 import edu.wpi.first.wpilibj.Spark;
 import edu.wpi.first.wpilibj.drive.MecanumDrive;
 import edu.wpi.first.wpilibj.Encoder;
-//import edu.wpi.first.wpilibj.CounterBase.EncodingType;
 
 /**
  * The VM is configured to automatically run this class, and to call the
@@ -261,6 +260,7 @@ public class Robot extends TimedRobot {
     } else {
       forwardTop = false;
       letsRoll.driveCartesian(0, 0, 0);
+      pinchAndRetreat();
     }
   }
 
@@ -270,6 +270,7 @@ public class Robot extends TimedRobot {
     } else {
       forwardMid = false;
       letsRoll.driveCartesian(0, 0, 0);
+      pinchAndRetreat();
     }
 
   }
@@ -280,6 +281,7 @@ public class Robot extends TimedRobot {
     } else {
       forwardLow = false;
       letsRoll.driveCartesian(0, 0, 0);
+      pinchAndRetreat();
     }
 
   }
@@ -290,5 +292,8 @@ public class Robot extends TimedRobot {
       forwardPickup = false;
       letsRoll.driveCartesian(0, 0, 0);
     }
+  }
+  private void pinchAndRetreat() {
+
   }
 }
