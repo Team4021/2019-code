@@ -20,6 +20,7 @@ import edu.wpi.first.wpilibj.drive.MecanumDrive;
 import edu.wpi.first.wpilibj.Encoder;
 import edu.wpi.first.wpilibj.Compressor;
 import edu.wpi.first.wpilibj.AnalogInput;
+import edu.wpi.first.wpilibj.Solenoid;
 
 /**
  * The VM is configured to automatically run this class, and to call the
@@ -53,6 +54,7 @@ public class Robot extends TimedRobot {
   private XboxController Xbox;
   double distance;
   double ledMode = 0;
+  double PSI;
   boolean rotationButtonLow = false;
   boolean rotationButtonMid = false;
   boolean rotationButtonTop = false;
@@ -73,6 +75,10 @@ public class Robot extends TimedRobot {
   Spark frontright;
   Spark liftMotor;
   Encoder encoder1;
+  Compressor compressor = new Compressor(0);
+  Solenoid solenoid = new Solenoid(0);
+  AnalogInput pressureSensor = new AnalogInput(0);
+
   
 
   /**
