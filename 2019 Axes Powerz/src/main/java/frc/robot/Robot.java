@@ -121,9 +121,11 @@ public class Robot extends TimedRobot {
    */
   @Override
   public void robotPeriodic() {
+    System.out.println(PSI);
+    SmartDashboard.putNumber("PSI", PSI);
     distance = encoder1.getDistance();
-    System.out.println(distance);
     // these put our NetworkTableEntries into variables
+    double PSI = 250 * pressureSensor.getVoltage() / 5.0 - 20.0;
     double x = tx.getDouble(0.0);
     double y = ty.getDouble(0.0);
     double area = ta.getDouble(0.0);
@@ -138,6 +140,9 @@ public class Robot extends TimedRobot {
     SmartDashboard.putNumber("LimelightArea", area); // displays area of target
     SmartDashboard.putNumber("LimelightRotation", targetRotation); // displays rotation of target
     NetworkTableInstance.getDefault().getTable("limelight").getEntry("ledMode").setNumber(0);
+    if (PSI < 115) {
+      compressor.setClosedLoopControl(true);
+    }
     if (Xbox.getXButtonPressed()) {
       rotationButtonTop = true;
     } // starts panel place on top
