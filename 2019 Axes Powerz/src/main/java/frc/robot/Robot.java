@@ -15,12 +15,15 @@ import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableEntry;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.GenericHID.Hand;
+import edu.wpi.first.wpilibj.Relay.Value;
 import edu.wpi.first.wpilibj.Spark;
 import edu.wpi.first.wpilibj.drive.MecanumDrive;
 import edu.wpi.first.wpilibj.Encoder;
 import edu.wpi.first.wpilibj.Compressor;
 import edu.wpi.first.wpilibj.AnalogInput;
 import edu.wpi.first.wpilibj.Solenoid;
+import edu.wpi.first.wpilibj.DigitalInput;
+import edu.wpi.first.wpilibj.Relay;
 
 /**
  * The VM is configured to automatically run this class, and to call the
@@ -59,10 +62,12 @@ public class Robot extends TimedRobot {
   boolean rotationButtonMid = false;
   boolean rotationButtonTop = false;
   boolean panelPickupButton = false;
+  boolean retreatVariable;
   boolean forwardTop = false;
   boolean forwardMid = false;
   boolean forwardLow = false;
   boolean forwardPickup = false;
+  boolean clawOpen = true;
   boolean strafeButton;
   boolean panelVariable;
   boolean switchLowValue;
@@ -74,10 +79,18 @@ public class Robot extends TimedRobot {
   Spark frontleft;
   Spark frontright;
   Spark liftMotor;
+  Relay Spike;
   Encoder encoder1;
   Compressor compressor = new Compressor(0);
   Solenoid solenoid = new Solenoid(0);
   AnalogInput pressureSensor = new AnalogInput(0);
+  DigitalInput limitLow = new DigitalInput(0);
+  DigitalInput limitMid = new DigitalInput(1);
+  DigitalInput limitTop = new DigitalInput(2);
+  DigitalInput limitFront = new DigitalInput(3);
+  DigitalInput limitBack = new DigitalInput(4);
+  DigitalInput limitRightWheel = new DigitalInput(5);
+  DigitalInput limitLeftWheel = new DigitalInput(6);
 
   
 
@@ -94,6 +107,7 @@ public class Robot extends TimedRobot {
     frontleft = new Spark(2);
     frontright = new Spark(1);
     liftMotor = new Spark(4);
+    Spike = new Relay(0);
     Xbox = new XboxController(0);
     letsRoll = new MecanumDrive(frontleft, rearleft, frontright, rearright);
     rearright.setSafetyEnabled(false);
@@ -143,6 +157,13 @@ public class Robot extends TimedRobot {
     if (PSI < 115) {
       compressor.setClosedLoopControl(true);
     }
+    else {
+      compressor.setClosedLoopControl(false);
+    }
+    if (clawOpen == true) {
+      solenoid.set(true);
+    }
+
     if (Xbox.getXButtonPressed()) {
       rotationButtonTop = true;
     } // starts panel place on top
@@ -164,6 +185,7 @@ public class Robot extends TimedRobot {
       forwardMid = false;
       forwardLow = false;
       forwardPickup = false;
+      retreatVariable = false;
     } 
   
      if (rotationButtonTop == true || rotationButtonMid == true || rotationButtonLow == true || panelPickupButton == true) {
@@ -180,6 +202,9 @@ public class Robot extends TimedRobot {
     }  
     else if (forwardPickup == true) {
       pickup();
+    }
+    else if (retreatVariable == true) {
+      pinchAndRetreat();
     }
     else {
       letsRoll.driveCartesian(Xbox.getX(Hand.kLeft), Xbox.getY(Hand.kLeft) * -1, Xbox.getX(Hand.kRight), 0.0); // gives us control
@@ -232,17 +257,22 @@ public class Robot extends TimedRobot {
     if (Math.abs(targetRotation) > 45 && Math.abs(targetRotation) < 89) {
       // arc right
       letsRoll.driveCartesian(.3, 0.0, -.125, 0.0);
-    } else if (Math.abs(targetRotation) < 45 && Math.abs(targetRotation) > 1) {
+    } 
+    else if (Math.abs(targetRotation) < 45 && Math.abs(targetRotation) > 1) {
       letsRoll.driveCartesian(-.3, 0.0, .125, 0.0);
       // arc left
-    } else if (targetRotation < -88 || targetRotation > -2) {
+    }
+     else if (targetRotation < -88 || targetRotation > -2) {
       if (x < -1) {
         letsRoll.driveCartesian(-.36, 0.0, 0, 0.0);
-      } else if (x > 1) {
+      } 
+      else if (x > 1) {
         letsRoll.driveCartesian(.36, 0.0, 0, 0.0);
-      } else if (area < 1.5 && area > 0) {
+      } 
+      else if (area < 1.5 && area > 0) {
         letsRoll.driveCartesian(0, .5, 0, 0.0);
-      } else {
+      } 
+      else {
         frontleft.set(0);
         frontright.set(0);
         rearleft.set(0);
@@ -251,13 +281,16 @@ public class Robot extends TimedRobot {
         if (rotationButtonTop == true) {
         rotationButtonTop = false;
         forwardTop = true;
-        } else if (rotationButtonMid == true) {
+        } 
+        else if (rotationButtonMid == true) {
           rotationButtonMid = false;
           forwardMid = true;
-        } else if (rotationButtonLow == true) {
+        } 
+        else if (rotationButtonLow == true) {
           rotationButtonLow = false;
           forwardLow = true;
-        } else if (panelPickupButton == true) {
+        }
+         else if (panelPickupButton == true) {
           panelPickupButton = false;
           forwardPickup = true;
         }
@@ -268,22 +301,28 @@ public class Robot extends TimedRobot {
 
 
   private void placeTop() {
-    if (distance < 25) {
-      letsRoll.driveCartesian(0, .25, 0);
-    } else {
+    if (limitTop.get() == false) {
+      liftMotor.set(.75);
+    } else if (limitFront.get() == false) {
+      Spike.set(Value.kForward);
+    }
+     else {
       forwardTop = false;
       letsRoll.driveCartesian(0, 0, 0);
-      pinchAndRetreat();
+      retreatVariable = true;
+      encoder1.reset();
     }
   }
 
   private void placeMid() {
     if (distance < 25) {
       letsRoll.driveCartesian(0, .25, 0);
-    } else {
+    } 
+    else {
       forwardMid = false;
       letsRoll.driveCartesian(0, 0, 0);
-      pinchAndRetreat();
+      retreatVariable = true;
+      encoder1.reset();
     }
 
   }
@@ -291,22 +330,32 @@ public class Robot extends TimedRobot {
   private void placeLow() {
     if (distance < 25) {
       letsRoll.driveCartesian(0, .25, 0);
-    } else {
+    }
+     else {
       forwardLow = false;
       letsRoll.driveCartesian(0, 0, 0);
-      pinchAndRetreat();
+      retreatVariable = true;
+      encoder1.reset();
     }
 
   }
   private void pickup() {
     if (distance < 25) {
       letsRoll.driveCartesian(0, .25, 0);
-    } else {
+    }
+     else {
       forwardPickup = false;
       letsRoll.driveCartesian(0, 0, 0);
     }
   }
   private void pinchAndRetreat() {
+    clawOpen = false;
+    if (distance > -10) {
+      letsRoll.driveCartesian(0, -.5, 0);
+    }
+    else {
+      retreatVariable = false;
+    }
 
   }
 }
