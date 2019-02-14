@@ -92,15 +92,12 @@ public class Robot extends TimedRobot {
   DigitalInput limitRightWheel = new DigitalInput(5);
   DigitalInput limitLeftWheel = new DigitalInput(6);
 
-  
-
   /**
    * This function is run when the robot is first started up and should be used
    * for any initialization code.
    */
   @Override
   public void robotInit() {
-    //Time = 0;
     SmartDashboard.putData("Auto choices", m_chooser);
     rearleft = new Spark(3);
     rearright = new Spark(0);
@@ -110,15 +107,16 @@ public class Robot extends TimedRobot {
     Spike = new Relay(0);
     Xbox = new XboxController(0);
     letsRoll = new MecanumDrive(frontleft, rearleft, frontright, rearright);
+    // Safety errors if the following are true
     rearright.setSafetyEnabled(false);
     rearleft.setSafetyEnabled(false);
     frontright.setSafetyEnabled(false);
     frontleft.setSafetyEnabled(false);
     liftMotor.setSafetyEnabled(false);
-    encoder1 = new Encoder (0, 1, false, Encoder.EncodingType.k4X);
+    encoder1 = new Encoder(0, 1, false, Encoder.EncodingType.k4X);
     encoder1.setMaxPeriod(.1);
     encoder1.setMinRate(.01);
-    encoder1.setDistancePerPulse(.045);
+    // encoder1.setDistancePerPulse(.045);
     encoder1.setDistancePerPulse(.062);
     encoder1.setReverseDirection(false);
     encoder1.setSamplesToAverage(7);
@@ -135,11 +133,12 @@ public class Robot extends TimedRobot {
    */
   @Override
   public void robotPeriodic() {
+    distance = encoder1.getDistance();
+    // calculating, printing, and putting PSI to SmartDashboard
+    double PSI = 250 * pressureSensor.getVoltage() / 5.0 - 20.0;
     System.out.println(PSI);
     SmartDashboard.putNumber("PSI", PSI);
-    distance = encoder1.getDistance();
     // these put our NetworkTableEntries into variables
-    double PSI = 250 * pressureSensor.getVoltage() / 5.0 - 20.0;
     double x = tx.getDouble(0.0);
     double y = ty.getDouble(0.0);
     double area = ta.getDouble(0.0);
@@ -147,21 +146,21 @@ public class Robot extends TimedRobot {
     double shortestSide = tshort.getDouble(0.0);
     double targetWidth = thor.getDouble(0.0);
     double targetHeight = tvert.getDouble(0.0);
-    double pipeline = getpipe.getDouble(0.0); 
+    double pipeline = getpipe.getDouble(0.0);
     double targetRotation = ts.getDouble(0.0);
     SmartDashboard.putNumber("LimelightX", x); // displays x axis from target
     SmartDashboard.putNumber("LimelightY", y); // displays y axis from target
     SmartDashboard.putNumber("LimelightArea", area); // displays area of target
     SmartDashboard.putNumber("LimelightRotation", targetRotation); // displays rotation of target
     NetworkTableInstance.getDefault().getTable("limelight").getEntry("ledMode").setNumber(0);
-    if (PSI < 115) {
+    if (PSI < 115) { // Maximum legal PSI is 120, sometimes overshoots
       compressor.setClosedLoopControl(true);
-    }
-    else {
+    } else {
       compressor.setClosedLoopControl(false);
     }
     if (clawOpen == true) {
       solenoid.set(true);
+      // might have to write close code?
     }
 
     if (Xbox.getXButtonPressed()) {
@@ -172,11 +171,13 @@ public class Robot extends TimedRobot {
     } // starts panel place on Mid
     if (Xbox.getBButtonPressed()) {
       rotationButtonLow = true;
-    } // starts panel place on Low 
+    } // starts panel place on Low
     if (Xbox.getAButtonPressed()) {
       panelPickupButton = true;
     } // starts panel pickup
-    if (Xbox.getY(Hand.kLeft) > .4 || Xbox.getX(Hand.kLeft) > .4 || Xbox.getX(Hand.kLeft) < -.4 || Xbox.getY(Hand.kLeft) < -.4) {
+    if (Xbox.getY(Hand.kLeft) > .4 || Xbox.getX(Hand.kLeft) > .4 || Xbox.getX(Hand.kLeft) < -.4
+        || Xbox.getY(Hand.kLeft) < -.4) {
+      // Jumps out of semiautonomous if joystick is moved far enough
       rotationButtonLow = false;
       rotationButtonMid = false;
       rotationButtonTop = false;
@@ -186,29 +187,28 @@ public class Robot extends TimedRobot {
       forwardLow = false;
       forwardPickup = false;
       retreatVariable = false;
-    } 
-  
-     if (rotationButtonTop == true || rotationButtonMid == true || rotationButtonLow == true || panelPickupButton == true) {
+    }
+
+    if (rotationButtonTop == true || rotationButtonMid == true || rotationButtonLow == true
+        || panelPickupButton == true) {
+      // If any buttons are true, go to autoCorrect
+      // They go below because they are different variables
       autoCorrect(targetRotation, x, area);
-    }
-     else if (forwardTop == true) {
+    } else if (forwardTop == true) {
       placeTop();
-    }
-     else if (forwardMid == true) {
+      // In these and the following, we go to the desired method
+    } else if (forwardMid == true) {
       placeMid();
-    }  
-    else if (forwardLow == true) {
+    } else if (forwardLow == true) {
       placeLow();
-    }  
-    else if (forwardPickup == true) {
+    } else if (forwardPickup == true) {
       pickup();
-    }
-    else if (retreatVariable == true) {
+    } else if (retreatVariable == true) {
       pinchAndRetreat();
+    } else {
+      letsRoll.driveCartesian(Xbox.getX(Hand.kLeft), Xbox.getY(Hand.kLeft) * -1, Xbox.getX(Hand.kRight), 0.0);
+      // gives us control
     }
-    else {
-      letsRoll.driveCartesian(Xbox.getX(Hand.kLeft), Xbox.getY(Hand.kLeft) * -1, Xbox.getX(Hand.kRight), 0.0); // gives us control
-    } 
   }
 
   /**
@@ -257,40 +257,37 @@ public class Robot extends TimedRobot {
     if (Math.abs(targetRotation) > 45 && Math.abs(targetRotation) < 89) {
       // arc right
       letsRoll.driveCartesian(.3, 0.0, -.125, 0.0);
-    } 
-    else if (Math.abs(targetRotation) < 45 && Math.abs(targetRotation) > 1) {
+    } else if (Math.abs(targetRotation) < 45 && Math.abs(targetRotation) > 1) {
       letsRoll.driveCartesian(-.3, 0.0, .125, 0.0);
       // arc left
-    }
-     else if (targetRotation < -88 || targetRotation > -2) {
+    } else if (targetRotation < -88 || targetRotation > -2) {
       if (x < -1) {
         letsRoll.driveCartesian(-.36, 0.0, 0, 0.0);
-      } 
-      else if (x > 1) {
+        // If on the left side of target, go right
+      } else if (x > 1) {
         letsRoll.driveCartesian(.36, 0.0, 0, 0.0);
-      } 
-      else if (area < 1.5 && area > 0) {
+        // If on the right side of target, go left
+      } else if (area < 1.5 && area > 0) {
+        // We need to change the areas above because of the camera's new postition
         letsRoll.driveCartesian(0, .5, 0, 0.0);
-      } 
-      else {
+      } else {
         frontleft.set(0);
         frontright.set(0);
         rearleft.set(0);
         rearright.set(0);
         encoder1.reset();
         if (rotationButtonTop == true) {
-        rotationButtonTop = false;
-        forwardTop = true;
-        } 
-        else if (rotationButtonMid == true) {
+          rotationButtonTop = false;
+          forwardTop = true;
+          // Makes sure we don't do autocorrect again by using different variables, same
+          // things below
+        } else if (rotationButtonMid == true) {
           rotationButtonMid = false;
           forwardMid = true;
-        } 
-        else if (rotationButtonLow == true) {
+        } else if (rotationButtonLow == true) {
           rotationButtonLow = false;
           forwardLow = true;
-        }
-         else if (panelPickupButton == true) {
+        } else if (panelPickupButton == true) {
           panelPickupButton = false;
           forwardPickup = true;
         }
@@ -299,26 +296,26 @@ public class Robot extends TimedRobot {
 
   }
 
-
-  private void placeTop() {
+  private void placeTop() { // Test top first!!! Not others
     if (limitTop.get() == false) {
       liftMotor.set(.75);
+      // If the top limit switch is not pressed, go up
     } else if (limitFront.get() == false) {
       Spike.set(Value.kForward);
-    }
-     else {
+      // If the front limit switch is not pressed, move the claw forward
+    } else {
       forwardTop = false;
       letsRoll.driveCartesian(0, 0, 0);
       retreatVariable = true;
       encoder1.reset();
+      // Don't repeat this method, stop, prepare to pinchAndRetreat
     }
   }
 
   private void placeMid() {
     if (distance < 25) {
       letsRoll.driveCartesian(0, .25, 0);
-    } 
-    else {
+    } else {
       forwardMid = false;
       letsRoll.driveCartesian(0, 0, 0);
       retreatVariable = true;
@@ -330,8 +327,7 @@ public class Robot extends TimedRobot {
   private void placeLow() {
     if (distance < 25) {
       letsRoll.driveCartesian(0, .25, 0);
-    }
-     else {
+    } else {
       forwardLow = false;
       letsRoll.driveCartesian(0, 0, 0);
       retreatVariable = true;
@@ -339,22 +335,39 @@ public class Robot extends TimedRobot {
     }
 
   }
+
   private void pickup() {
-    if (distance < 25) {
-      letsRoll.driveCartesian(0, .25, 0);
-    }
-     else {
+    if (limitLow.get() == false) {
+      liftMotor.set(-.75);
+      // If the lift isn't in the lowest setting (sensed by limit switch) go down
+    } else if (limitFront.get() == false && clawOpen == false) {
+      Spike.set(Value.kForward);
+      // If the claw isn't forward and isn't open, move the claw forward (and
+      // statement explained below)
+    } else if (clawOpen == false) {
+      clawOpen = true;
+      // Makes sure the claw is open
+    } else if (distance > -10) {
+      letsRoll.driveCartesian(0, -.5, 0);
+      // Moves backwards until the encoder is low enough
+    } else if (limitBack.get() == false) {
+      Spike.set(Value.kReverse);
+      // If the claw isn't in the back position, move back. If we didn't have the and
+      // statement, it would get stuck going back and forth between these statements
+    } else {
       forwardPickup = false;
-      letsRoll.driveCartesian(0, 0, 0);
+      // Don't repeat this method
     }
   }
+
   private void pinchAndRetreat() {
     clawOpen = false;
     if (distance > -10) {
       letsRoll.driveCartesian(0, -.5, 0);
-    }
-    else {
+      // Move back until the encoder gets to -10
+    } else {
       retreatVariable = false;
+      // Don't repeat this method
     }
 
   }
