@@ -62,23 +62,24 @@ public class Robot extends TimedRobot {
   boolean rotationButtonMid = false;
   boolean rotationButtonTop = false;
   boolean panelPickupButton = false;
-  boolean retreatVariable;
+  boolean retreatVariable = false;
   boolean forwardTop = false;
   boolean forwardMid = false;
   boolean forwardLow = false;
   boolean forwardPickup = false;
   boolean clawOpen = true;
-  boolean strafeButton;
-  boolean panelVariable;
-  boolean switchLowValue;
-  boolean switchMidValue;
-  boolean switchTopValue;
+  boolean strafeButton = false;
+  boolean panelVariable = false;
+  boolean flippyBoi = false;
   float Kp;
   Spark rearleft;
   Spark rearright;
   Spark frontleft;
   Spark frontright;
   Spark liftMotor;
+  Spark liftBot;
+  Spark liftBotSpinRight;
+  Spark liftBotSpinLeft;
   Relay Spike;
   Encoder encoder1;
   Compressor compressor = new Compressor(0);
@@ -104,6 +105,9 @@ public class Robot extends TimedRobot {
     frontleft = new Spark(2);
     frontright = new Spark(1);
     liftMotor = new Spark(4);
+    liftBot = new Spark(5);
+    liftBotSpinLeft = new Spark(6);
+    liftBotSpinRight = new Spark(7);
     Spike = new Relay(0);
     Xbox = new XboxController(0);
     letsRoll = new MecanumDrive(frontleft, rearleft, frontright, rearright);
@@ -175,6 +179,9 @@ public class Robot extends TimedRobot {
     if (Xbox.getAButtonPressed()) {
       panelPickupButton = true;
     } // starts panel pickup
+    if (Xbox.getRawButtonPressed(5) == true) {
+      flippyBoi = true;
+    }
     if (Xbox.getY(Hand.kLeft) > .4 || Xbox.getX(Hand.kLeft) > .4 || Xbox.getX(Hand.kLeft) < -.4
         || Xbox.getY(Hand.kLeft) < -.4) {
       // Jumps out of semiautonomous if joystick is moved far enough
@@ -205,6 +212,8 @@ public class Robot extends TimedRobot {
       pickup();
     } else if (retreatVariable == true) {
       pinchAndRetreat();
+    } else if (flippyBoi == true) {
+      climbByFlipping();
     } else {
       letsRoll.driveCartesian(Xbox.getX(Hand.kLeft), Xbox.getY(Hand.kLeft) * -1, Xbox.getX(Hand.kRight), 0.0);
       // gives us control
@@ -369,6 +378,9 @@ public class Robot extends TimedRobot {
       retreatVariable = false;
       // Don't repeat this method
     }
+
+  }
+  private void climbByFlipping() {
 
   }
 }
