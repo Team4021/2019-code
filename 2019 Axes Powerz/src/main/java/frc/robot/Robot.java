@@ -85,13 +85,13 @@ public class Robot extends TimedRobot {
   Compressor compressor = new Compressor(0);
   Solenoid solenoid = new Solenoid(0);
   AnalogInput pressureSensor = new AnalogInput(0);
-  DigitalInput limitLow = new DigitalInput(0);
-  DigitalInput limitMid = new DigitalInput(1);
-  DigitalInput limitTop = new DigitalInput(2);
-  DigitalInput limitFront = new DigitalInput(3);
-  DigitalInput limitBack = new DigitalInput(4);
-  DigitalInput limitRightWheel = new DigitalInput(5);
-  DigitalInput limitLeftWheel = new DigitalInput(6);
+  DigitalInput limitLow;
+  DigitalInput limitMid;
+  DigitalInput limitTop;
+  DigitalInput limitFront;
+  DigitalInput limitBack;
+  DigitalInput limitRightWheel;
+  DigitalInput limitLeftWheel;
 
   /**
    * This function is run when the robot is first started up and should be used
@@ -100,13 +100,21 @@ public class Robot extends TimedRobot {
   @Override
   public void robotInit() {
     SmartDashboard.putData("Auto choices", m_chooser);
-    rearleft = new Spark(3);
-    rearright = new Spark(0);
-    frontleft = new Spark(2);
-    frontright = new Spark(1);
-    liftMotor = new Spark(4);
+    limitLow = new DigitalInput(0);
+    limitMid = new DigitalInput(1);
+    limitTop = new DigitalInput(2);
+    limitFront = new DigitalInput(3);
+    limitBack = new DigitalInput(4);
+    limitRightWheel = new DigitalInput(5);
+    limitLeftWheel = new DigitalInput(6);
+    // Ports are subject to change,
+    rearleft = new Spark(4); // 3 on prototype
+    rearright = new Spark(3); // 0 on prototype
+    frontleft = new Spark(6); // 2 on prototype
+    frontright = new Spark(2); // 1 prototype
+    liftMotor = new Spark(0); // 4 prototype
     liftBot = new Spark(5);
-    liftBotSpinLeft = new Spark(6);
+    liftBotSpinLeft = new Spark(1);
     liftBotSpinRight = new Spark(7);
     Spike = new Relay(0);
     Xbox = new XboxController(0);
@@ -117,7 +125,7 @@ public class Robot extends TimedRobot {
     frontright.setSafetyEnabled(false);
     frontleft.setSafetyEnabled(false);
     liftMotor.setSafetyEnabled(false);
-    encoder1 = new Encoder(0, 1, false, Encoder.EncodingType.k4X);
+    encoder1 = new Encoder(8, 9, false, Encoder.EncodingType.k4X);
     encoder1.setMaxPeriod(.1);
     encoder1.setMinRate(.01);
     // encoder1.setDistancePerPulse(.045);
@@ -146,11 +154,11 @@ public class Robot extends TimedRobot {
     double x = tx.getDouble(0.0);
     double y = ty.getDouble(0.0);
     double area = ta.getDouble(0.0);
-    double longestSide = tlong.getDouble(0.0);
-    double shortestSide = tshort.getDouble(0.0);
-    double targetWidth = thor.getDouble(0.0);
-    double targetHeight = tvert.getDouble(0.0);
-    double pipeline = getpipe.getDouble(0.0);
+    // double longestSide = tlong.getDouble(0.0);
+    // double shortestSide = tshort.getDouble(0.0);
+    // double targetWidth = thor.getDouble(0.0);
+    // double targetHeight = tvert.getDouble(0.0);
+    // double pipeline = getpipe.getDouble(0.0);
     double targetRotation = ts.getDouble(0.0);
     SmartDashboard.putNumber("LimelightX", x); // displays x axis from target
     SmartDashboard.putNumber("LimelightY", y); // displays y axis from target
@@ -194,6 +202,7 @@ public class Robot extends TimedRobot {
       forwardLow = false;
       forwardPickup = false;
       retreatVariable = false;
+      flippyBoi = false;
     }
 
     if (rotationButtonTop == true || rotationButtonMid == true || rotationButtonLow == true
@@ -302,7 +311,6 @@ public class Robot extends TimedRobot {
         }
       }
     }
-
   }
 
   private void placeTop() { // Test top first!!! Not others
@@ -380,7 +388,13 @@ public class Robot extends TimedRobot {
     }
 
   }
-  private void climbByFlipping() {
 
+  private void climbByFlipping() {
+    encoder1.reset();
+
+    // Move claw back
+    // Put "flippers" down
+    // Spin right and left side wheels, and normal drive
+    // When at the top, stop
   }
 }
