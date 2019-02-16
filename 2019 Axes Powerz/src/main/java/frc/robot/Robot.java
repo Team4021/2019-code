@@ -145,6 +145,14 @@ public class Robot extends TimedRobot {
    */
   @Override
   public void robotPeriodic() {
+    SmartDashboard.putBoolean("LimitTop", limitTop.get());
+    SmartDashboard.putBoolean("LimitMid", limitMid.get());
+    SmartDashboard.putBoolean("LimitLow", limitLow.get());
+    SmartDashboard.putBoolean("LimitFront", limitFront.get());
+    SmartDashboard.putBoolean("LimitBack", limitBack.get());
+    SmartDashboard.putBoolean("LimitRight", limitRightWheel.get());
+    SmartDashboard.putBoolean("LimitLeft", limitLeftWheel.get());
+    SmartDashboard.putNumber("Encoder", distance);
     distance = encoder1.getDistance();
     // calculating, printing, and putting PSI to SmartDashboard
     double PSI = 250 * pressureSensor.getVoltage() / 5.0 - 20.0;
@@ -172,7 +180,8 @@ public class Robot extends TimedRobot {
     }
     if (clawOpen == true) {
       solenoid.set(true);
-      // might have to write close code?
+    } else {
+      solenoid.set(false);
     }
 
     if (Xbox.getXButtonPressed()) {
@@ -187,7 +196,7 @@ public class Robot extends TimedRobot {
     if (Xbox.getAButtonPressed()) {
       panelPickupButton = true;
     } // starts panel pickup
-    if (Xbox.getRawButtonPressed(5) == true) {
+    if (Xbox.getRawButtonPressed(5)) {
       flippyBoi = true;
     }
     if (Xbox.getY(Hand.kLeft) > .4 || Xbox.getX(Hand.kLeft) > .4 || Xbox.getX(Hand.kLeft) < -.4
@@ -203,6 +212,10 @@ public class Robot extends TimedRobot {
       forwardPickup = false;
       retreatVariable = false;
       flippyBoi = false;
+      if (limitLow.get() == false){
+        liftMotor.set(.2);
+      }
+      else liftMotor.set(0);
     }
 
     if (rotationButtonTop == true || rotationButtonMid == true || rotationButtonLow == true
@@ -315,7 +328,7 @@ public class Robot extends TimedRobot {
 
   private void placeTop() { // Test top first!!! Not others
     if (limitTop.get() == false) {
-      liftMotor.set(.75);
+      liftMotor.set(-.75);
       // If the top limit switch is not pressed, go up
     } else if (limitFront.get() == false) {
       Spike.set(Value.kForward);
@@ -355,7 +368,7 @@ public class Robot extends TimedRobot {
 
   private void pickup() {
     if (limitLow.get() == false) {
-      liftMotor.set(-.75);
+      liftMotor.set(0.2);
       // If the lift isn't in the lowest setting (sensed by limit switch) go down
     } else if (limitFront.get() == false && clawOpen == false) {
       Spike.set(Value.kForward);
