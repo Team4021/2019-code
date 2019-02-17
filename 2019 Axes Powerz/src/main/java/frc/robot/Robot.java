@@ -16,7 +16,7 @@ import edu.wpi.first.networktables.NetworkTableEntry;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.GenericHID.Hand;
 import edu.wpi.first.wpilibj.Relay.Value;
-import edu.wpi.first.wpilibj.Spark;
+import edu.wpi.first.wpilibj.VictorSP;
 import edu.wpi.first.wpilibj.drive.MecanumDrive;
 import edu.wpi.first.wpilibj.Encoder;
 import edu.wpi.first.wpilibj.Compressor;
@@ -72,14 +72,14 @@ public class Robot extends TimedRobot {
   boolean panelVariable = false;
   boolean flippyBoi = false;
   float Kp;
-  Spark rearleft;
-  Spark rearright;
-  Spark frontleft;
-  Spark frontright;
-  Spark liftMotor;
-  Spark liftBot;
-  Spark liftBotSpinRight;
-  Spark liftBotSpinLeft;
+  VictorSP rearleft;
+  VictorSP rearright;
+  VictorSP frontleft;
+  VictorSP frontright;
+  VictorSP liftMotor;
+  VictorSP liftBot;
+  VictorSP liftBotSpinRight;
+  VictorSP liftBotSpinLeft;
   Relay Spike;
   Encoder encoder1;
   Compressor compressor = new Compressor(0);
@@ -90,8 +90,8 @@ public class Robot extends TimedRobot {
   DigitalInput limitTop;
   DigitalInput limitFront;
   DigitalInput limitBack;
-  DigitalInput limitRightWheel;
-  DigitalInput limitLeftWheel;
+  DigitalInput limitWheelFront;
+  DigitalInput limitWheelBack;
 
   /**
    * This function is run when the robot is first started up and should be used
@@ -101,21 +101,21 @@ public class Robot extends TimedRobot {
   public void robotInit() {
     SmartDashboard.putData("Auto choices", m_chooser);
     limitLow = new DigitalInput(0);
-    limitMid = new DigitalInput(1);
-    limitTop = new DigitalInput(2);
-    limitFront = new DigitalInput(3);
-    limitBack = new DigitalInput(4);
-    limitRightWheel = new DigitalInput(5);
-    limitLeftWheel = new DigitalInput(6);
+    limitMid = new DigitalInput(6);
+    limitTop = new DigitalInput(1);
+    limitFront = new DigitalInput(4);
+    limitBack = new DigitalInput(5);
+    limitWheelFront = new DigitalInput(2);
+    limitWheelBack = new DigitalInput(3);
     // Ports are subject to change,
-    rearleft = new Spark(4); // 3 on prototype
-    rearright = new Spark(3); // 0 on prototype
-    frontleft = new Spark(6); // 2 on prototype
-    frontright = new Spark(2); // 1 prototype
-    liftMotor = new Spark(0); // 4 prototype
-    liftBot = new Spark(5);
-    liftBotSpinLeft = new Spark(1);
-    liftBotSpinRight = new Spark(7);
+    rearleft = new VictorSP(4); // 3 on prototype
+    rearright = new VictorSP(3); // 0 on prototype
+    frontleft = new VictorSP(6); // 2 on prototype
+    frontright = new VictorSP(2); // 1 prototype
+    liftMotor = new VictorSP(0); // 4 prototype
+    liftBot = new VictorSP(5);
+    liftBotSpinLeft = new VictorSP(1);
+    liftBotSpinRight = new VictorSP(7);
     Spike = new Relay(0);
     Xbox = new XboxController(0);
     letsRoll = new MecanumDrive(frontleft, rearleft, frontright, rearright);
@@ -145,13 +145,18 @@ public class Robot extends TimedRobot {
    */
   @Override
   public void robotPeriodic() {
+    if (Xbox.getRawButton(6)){
+      clawOpen = true;
+    } else {
+      clawOpen = false;
+    }
     SmartDashboard.putBoolean("LimitTop", limitTop.get());
     SmartDashboard.putBoolean("LimitMid", limitMid.get());
     SmartDashboard.putBoolean("LimitLow", limitLow.get());
     SmartDashboard.putBoolean("LimitFront", limitFront.get());
     SmartDashboard.putBoolean("LimitBack", limitBack.get());
-    SmartDashboard.putBoolean("LimitRight", limitRightWheel.get());
-    SmartDashboard.putBoolean("LimitLeft", limitLeftWheel.get());
+    SmartDashboard.putBoolean("LimitWheelFront", limitWheelFront.get());
+    SmartDashboard.putBoolean("LimitWheelback", limitWheelBack.get());
     SmartDashboard.putNumber("Encoder", distance);
     distance = encoder1.getDistance();
     // calculating, printing, and putting PSI to SmartDashboard
@@ -173,9 +178,9 @@ public class Robot extends TimedRobot {
     SmartDashboard.putNumber("LimelightArea", area); // displays area of target
     SmartDashboard.putNumber("LimelightRotation", targetRotation); // displays rotation of target
     NetworkTableInstance.getDefault().getTable("limelight").getEntry("ledMode").setNumber(0);
-    if (PSI < 115) { // Maximum legal PSI is 120, sometimes overshoots
+    if (PSI < 100) { // Maximum legal PSI is 120, sometimes overshoots
       compressor.setClosedLoopControl(true);
-    } else {
+    } else if (PSI > 112){
       compressor.setClosedLoopControl(false);
     }
     if (clawOpen == true) {
@@ -183,7 +188,7 @@ public class Robot extends TimedRobot {
     } else {
       solenoid.set(false);
     }
-
+y
     if (Xbox.getXButtonPressed()) {
       rotationButtonTop = true;
     } // starts panel place on top
@@ -214,8 +219,9 @@ public class Robot extends TimedRobot {
       flippyBoi = false;
       if (limitLow.get() == false){
         liftMotor.set(.2);
+      } else {
+        liftMotor.set(0);
       }
-      else liftMotor.set(0);
     }
 
     if (rotationButtonTop == true || rotationButtonMid == true || rotationButtonLow == true
@@ -355,13 +361,18 @@ public class Robot extends TimedRobot {
   }
 
   private void placeLow() {
-    if (distance < 25) {
-      letsRoll.driveCartesian(0, .25, 0);
+    if (limitLow.get() == false) {
+      liftMotor.set(.75);
+      // If the top limit switch is not pressed, go down
+    } else if (limitFront.get() == false) {
+      Spike.set(Value.kForward);
+      // If the front limit switch is not pressed, move the claw forward
     } else {
       forwardLow = false;
       letsRoll.driveCartesian(0, 0, 0);
       retreatVariable = true;
       encoder1.reset();
+      // Don't repeat this method, stop, prepare to pinchAndRetreat
     }
 
   }
@@ -409,5 +420,11 @@ public class Robot extends TimedRobot {
     // Put "flippers" down
     // Spin right and left side wheels, and normal drive
     // When at the top, stop
+  }
+  private void Normal() {
+
+  }
+  private void manualOverride() {
+    
   }
 }
