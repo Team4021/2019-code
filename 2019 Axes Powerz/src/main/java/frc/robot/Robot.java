@@ -33,6 +33,8 @@ import edu.wpi.first.wpilibj.Relay;
  * project.
  */
 public class Robot extends TimedRobot {
+  private static final String limelightMethod = "Limelight";
+  private static final String jackdrive = "Manual Override";
   private String m_autoSelected;
   private final SendableChooser<String> m_chooser = new SendableChooser<>();
   // The following line is getting variables from the limelight
@@ -55,8 +57,12 @@ public class Robot extends TimedRobot {
   NetworkTableEntry ts = table.getEntry("ts");
   private MecanumDrive letsRoll;
   private XboxController Xbox;
+  double x;
+  double area;
+  double targetRotation;
   double distance;
   double ledMode = 0;
+  double cammode = 0;
   double PSI;
   boolean rotationButtonLow = false;
   boolean rotationButtonMid = false;
@@ -71,6 +77,7 @@ public class Robot extends TimedRobot {
   boolean strafeButton = false;
   boolean panelVariable = false;
   boolean flippyBoi = false;
+  boolean runCompress = true;
   float Kp;
   VictorSP rearleft;
   VictorSP rearright;
@@ -99,11 +106,13 @@ public class Robot extends TimedRobot {
    */
   @Override
   public void robotInit() {
-    SmartDashboard.putData("Auto choices", m_chooser);
+    m_chooser.setDefaultOption("limelight", limelightMethod);
+    m_chooser.addOption("JackDrive", jackdrive);
+    SmartDashboard.putData("drive choices", m_chooser);
     limitLow = new DigitalInput(0);
-    limitMid = new DigitalInput(6);
-    limitTop = new DigitalInput(1);
-    limitFront = new DigitalInput(4);
+    limitMid = new DigitalInput(4);
+    limitTop = new DigitalInput(6);
+    limitFront = new DigitalInput(1);
     limitBack = new DigitalInput(5);
     limitWheelFront = new DigitalInput(2);
     limitWheelBack = new DigitalInput(3);
@@ -145,11 +154,8 @@ public class Robot extends TimedRobot {
    */
   @Override
   public void robotPeriodic() {
-    if (Xbox.getRawButton(6)){
-      clawOpen = true;
-    } else {
-      clawOpen = false;
-    }
+      compressor.setClosedLoopControl(true);
+    m_autoSelected = m_chooser.getSelected();
     SmartDashboard.putBoolean("LimitTop", limitTop.get());
     SmartDashboard.putBoolean("LimitMid", limitMid.get());
     SmartDashboard.putBoolean("LimitLow", limitLow.get());
@@ -160,9 +166,6 @@ public class Robot extends TimedRobot {
     SmartDashboard.putNumber("Encoder", distance);
     distance = encoder1.getDistance();
     // calculating, printing, and putting PSI to SmartDashboard
-    double PSI = 250 * pressureSensor.getVoltage() / 5.0 - 20.0;
-    System.out.println(PSI);
-    SmartDashboard.putNumber("PSI", PSI);
     // these put our NetworkTableEntries into variables
     double x = tx.getDouble(0.0);
     double y = ty.getDouble(0.0);
@@ -178,73 +181,20 @@ public class Robot extends TimedRobot {
     SmartDashboard.putNumber("LimelightArea", area); // displays area of target
     SmartDashboard.putNumber("LimelightRotation", targetRotation); // displays rotation of target
     NetworkTableInstance.getDefault().getTable("limelight").getEntry("ledMode").setNumber(0);
-    if (PSI < 100) { // Maximum legal PSI is 120, sometimes overshoots
-      compressor.setClosedLoopControl(true);
-    } else if (PSI > 112){
-      compressor.setClosedLoopControl(false);
-    }
+    NetworkTableInstance.getDefault().getTable("limelight").getEntry("camMode").setNumber(0);
     if (clawOpen == true) {
       solenoid.set(true);
     } else {
       solenoid.set(false);
     }
-y
-    if (Xbox.getXButtonPressed()) {
-      rotationButtonTop = true;
-    } // starts panel place on top
-    if (Xbox.getYButtonPressed()) {
-      rotationButtonMid = true;
-    } // starts panel place on Mid
-    if (Xbox.getBButtonPressed()) {
-      rotationButtonLow = true;
-    } // starts panel place on Low
-    if (Xbox.getAButtonPressed()) {
-      panelPickupButton = true;
-    } // starts panel pickup
-    if (Xbox.getRawButtonPressed(5)) {
-      flippyBoi = true;
-    }
-    if (Xbox.getY(Hand.kLeft) > .4 || Xbox.getX(Hand.kLeft) > .4 || Xbox.getX(Hand.kLeft) < -.4
-        || Xbox.getY(Hand.kLeft) < -.4) {
-      // Jumps out of semiautonomous if joystick is moved far enough
-      rotationButtonLow = false;
-      rotationButtonMid = false;
-      rotationButtonTop = false;
-      panelPickupButton = false;
-      forwardTop = false;
-      forwardMid = false;
-      forwardLow = false;
-      forwardPickup = false;
-      retreatVariable = false;
-      flippyBoi = false;
-      if (limitLow.get() == false){
-        liftMotor.set(.2);
-      } else {
-        liftMotor.set(0);
-      }
-    }
-
-    if (rotationButtonTop == true || rotationButtonMid == true || rotationButtonLow == true
-        || panelPickupButton == true) {
-      // If any buttons are true, go to autoCorrect
-      // They go below because they are different variables
-      autoCorrect(targetRotation, x, area);
-    } else if (forwardTop == true) {
-      placeTop();
-      // In these and the following, we go to the desired method
-    } else if (forwardMid == true) {
-      placeMid();
-    } else if (forwardLow == true) {
-      placeLow();
-    } else if (forwardPickup == true) {
-      pickup();
-    } else if (retreatVariable == true) {
-      pinchAndRetreat();
-    } else if (flippyBoi == true) {
-      climbByFlipping();
-    } else {
-      letsRoll.driveCartesian(Xbox.getX(Hand.kLeft), Xbox.getY(Hand.kLeft) * -1, Xbox.getX(Hand.kRight), 0.0);
-      // gives us control
+    switch (m_autoSelected) {
+    case limelightMethod:
+      Normal();
+      break;
+    case jackdrive:
+    default:
+      manualOverride();
+      break;
     }
   }
 
@@ -290,7 +240,8 @@ y
   public void testPeriodic() {
   }
 
-  private void autoCorrect(double targetRotation, double x, double area) {
+  private void autoCorrect() {
+    System.out.println("autocorrect");
     if (Math.abs(targetRotation) > 45 && Math.abs(targetRotation) < 89) {
       // arc right
       letsRoll.driveCartesian(.3, 0.0, -.125, 0.0);
@@ -304,9 +255,10 @@ y
       } else if (x > 1) {
         letsRoll.driveCartesian(.36, 0.0, 0, 0.0);
         // If on the right side of target, go left
-      } else if (area < 1.5 && area > 0) {
+      } else if (area < 5.5 && area > 0) {
         // We need to change the areas above because of the camera's new postition
         letsRoll.driveCartesian(0, .5, 0, 0.0);
+        encoder1.reset();
       } else {
         frontleft.set(0);
         frontright.set(0);
@@ -333,8 +285,9 @@ y
   }
 
   private void placeTop() { // Test top first!!! Not others
+    System.out.println("lift");
     if (limitTop.get() == false) {
-      liftMotor.set(-.75);
+      liftMotor.set(.75);
       // If the top limit switch is not pressed, go up
     } else if (limitFront.get() == false) {
       Spike.set(Value.kForward);
@@ -361,8 +314,9 @@ y
   }
 
   private void placeLow() {
+    System.out.println("reached place low");
     if (limitLow.get() == false) {
-      liftMotor.set(.75);
+      liftMotor.set(-.75);
       // If the top limit switch is not pressed, go down
     } else if (limitFront.get() == false) {
       Spike.set(Value.kForward);
@@ -379,7 +333,7 @@ y
 
   private void pickup() {
     if (limitLow.get() == false) {
-      liftMotor.set(0.2);
+      liftMotor.set(-Xbox.getTriggerAxis(Hand.kLeft));
       // If the lift isn't in the lowest setting (sensed by limit switch) go down
     } else if (limitFront.get() == false && clawOpen == false) {
       Spike.set(Value.kForward);
@@ -400,7 +354,6 @@ y
       // Don't repeat this method
     }
   }
-
   private void pinchAndRetreat() {
     clawOpen = false;
     if (distance > -10) {
@@ -410,7 +363,6 @@ y
       retreatVariable = false;
       // Don't repeat this method
     }
-
   }
 
   private void climbByFlipping() {
@@ -421,10 +373,97 @@ y
     // Spin right and left side wheels, and normal drive
     // When at the top, stop
   }
-  private void Normal() {
 
+  private void Normal() {
+    if (Xbox.getXButtonPressed()) {
+      rotationButtonTop = true;
+      System.out.println("rotationbuttonTop =" + rotationButtonTop);
+    } // starts panel place on top
+    if (Xbox.getYButtonPressed()) {
+      rotationButtonMid = true;
+    } // starts panel place on Mid
+    if (Xbox.getBButtonPressed()) {
+      rotationButtonLow = true;
+    } // starts panel place on Low
+    if (Xbox.getAButtonPressed()) {
+      panelPickupButton = true;
+    } // starts panel pickup
+    if (Xbox.getRawButtonPressed(5)) {
+      flippyBoi = true;
+    }
+    System.out.println("rotationbuttonTop1 =" + rotationButtonTop);
+    if (Xbox.getY(Hand.kLeft) > .4 || Xbox.getX(Hand.kLeft) > .4 || Xbox.getX(Hand.kLeft) < -.4
+        || Xbox.getY(Hand.kLeft) < -.4) {
+      // Jumps out of semiautonomous if joystick is moved far enough
+      rotationButtonLow = false;
+      rotationButtonMid = false;
+      rotationButtonTop = false;
+      panelPickupButton = false;
+      forwardTop = false;
+      forwardMid = false;
+      forwardLow = false;
+      forwardPickup = false;
+      retreatVariable = false;
+      flippyBoi = false;
+    }
+    if (rotationButtonTop == true || rotationButtonMid == true || rotationButtonLow == true
+        || panelPickupButton == true) {
+      // If any buttons are true, go to autoCorrect
+      // They go below because they are different variables
+      autoCorrect();
+    } else if (forwardTop == true) {
+      placeTop();
+      // In these and the following, we go to the desired method
+    } else if (forwardMid == true) {
+      placeMid();
+    } else if (forwardLow == true) {
+      placeLow();
+    } else if (forwardPickup == true) {
+      pickup();
+    } else if (retreatVariable == true) {
+      pinchAndRetreat();
+    } else if (flippyBoi == true) {
+      climbByFlipping();
+    } else {
+      letsRoll.driveCartesian(Xbox.getX(Hand.kLeft), Xbox.getY(Hand.kLeft) * -1, Xbox.getX(Hand.kRight), 0.0);
+      // gives us control
+    }
   }
   private void manualOverride() {
-    
+    letsRoll.driveCartesian(Xbox.getX(Hand.kLeft), Xbox.getY(Hand.kLeft) * -1, Xbox.getX(Hand.kRight), 0.0);
+    if (Xbox.getAButton() && limitFront.get() == false) {
+      Spike.set(Relay.Value.kForward);
+    } else if (Xbox.getBButton() && limitBack.get() == false) {
+      Spike.set(Relay.Value.kReverse);
+    } else {
+      Spike.set(Relay.Value.kOff);
+    }
+    if (Xbox.getTriggerAxis(Hand.kRight) > 0 && limitTop.get() == false) {
+      liftMotor.set(Xbox.getTriggerAxis(Hand.kRight));
+    } else if (Xbox.getTriggerAxis(Hand.kLeft) > 0 && limitLow.get() == false) {
+      liftMotor.set(-Xbox.getTriggerAxis(Hand.kLeft) / 2);
+    } else {
+      liftMotor.set(0);
+    }
+    if (Xbox.getRawButton(5)) {
+      clawOpen = true;
+    } else if (Xbox.getRawButton(6)) {
+      clawOpen = false;
+    }
+    if (Xbox.getYButton() && limitWheelBack.get() == false) {
+      liftBot.set(.5);
+      liftBotSpinLeft.set(-.5);
+      liftBotSpinRight.set(-.5);
+    } else if (Xbox.getYButton() && limitWheelBack.get() == true) {
+      liftBotSpinLeft.set(-.5);
+      liftBotSpinRight.set(-.5);
+    } else if (Xbox.getXButton() && limitWheelFront.get() == false) {
+      liftBot.set(-.5);
+    }
+    else {
+      liftBot.set(0);
+      liftBotSpinLeft.set(0);
+      liftBotSpinRight.set(0);
+    }
   }
 }
