@@ -187,6 +187,7 @@ public class Robot extends TimedRobot {
     } else {
       solenoid.set(false);
     }
+    System.out.println("auto select is " + m_autoSelected);
     switch (m_autoSelected) {
     case limelightMethod:
       Normal();
@@ -241,7 +242,7 @@ public class Robot extends TimedRobot {
   }
 
   private void autoCorrect() {
-    System.out.println("autocorrect");
+    System.out.println("autocorrect engaged" + ", targetRotation " + targetRotation + ", area " + area +", x " + x);
     if (Math.abs(targetRotation) > 45 && Math.abs(targetRotation) < 89) {
       // arc right
       letsRoll.driveCartesian(.3, 0.0, -.125, 0.0);
@@ -285,7 +286,6 @@ public class Robot extends TimedRobot {
   }
 
   private void placeTop() { // Test top first!!! Not others
-    System.out.println("lift");
     if (limitTop.get() == false) {
       liftMotor.set(.75);
       // If the top limit switch is not pressed, go up
@@ -314,7 +314,6 @@ public class Robot extends TimedRobot {
   }
 
   private void placeLow() {
-    System.out.println("reached place low");
     if (limitLow.get() == false) {
       liftMotor.set(-.75);
       // If the top limit switch is not pressed, go down
@@ -377,7 +376,6 @@ public class Robot extends TimedRobot {
   private void Normal() {
     if (Xbox.getXButtonPressed()) {
       rotationButtonTop = true;
-      System.out.println("rotationbuttonTop =" + rotationButtonTop);
     } // starts panel place on top
     if (Xbox.getYButtonPressed()) {
       rotationButtonMid = true;
@@ -391,10 +389,10 @@ public class Robot extends TimedRobot {
     if (Xbox.getRawButtonPressed(5)) {
       flippyBoi = true;
     }
-    System.out.println("rotationbuttonTop1 =" + rotationButtonTop);
     if (Xbox.getY(Hand.kLeft) > .4 || Xbox.getX(Hand.kLeft) > .4 || Xbox.getX(Hand.kLeft) < -.4
         || Xbox.getY(Hand.kLeft) < -.4) {
       // Jumps out of semiautonomous if joystick is moved far enough
+      System.out.println("Failsafe activated");
       rotationButtonLow = false;
       rotationButtonMid = false;
       rotationButtonTop = false;
@@ -406,8 +404,9 @@ public class Robot extends TimedRobot {
       retreatVariable = false;
       flippyBoi = false;
     }
-    if (rotationButtonTop == true || rotationButtonMid == true || rotationButtonLow == true
-        || panelPickupButton == true) {
+    System.out.println("Line 407: rotationbuttonTop = " + rotationButtonTop + ", rotationbuttonMid = " + rotationButtonMid + ", rotationbuttonLow = " + rotationButtonLow + ", panelPickupButton = " + panelPickupButton + ", flipper = " + flippyBoi);
+    System.out.println("Line 408: forwardTop = " + forwardTop + ", forwardMid = " + forwardMid + ", forwardLow = " + forwardLow + ", forwardPickup = " + forwardPickup + ", retreatVariable = " + retreatVariable + ", flippyBoi = " + flippyBoi);
+    if (rotationButtonTop == true || rotationButtonMid == true || rotationButtonLow == true || panelPickupButton == true) {
       // If any buttons are true, go to autoCorrect
       // They go below because they are different variables
       autoCorrect();
