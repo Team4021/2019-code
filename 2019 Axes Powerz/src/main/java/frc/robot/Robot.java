@@ -163,6 +163,19 @@ public class Robot extends TimedRobot{
    */
   @Override
   public void robotPeriodic() {
+    if(isDisabled()){
+      rotationButtonLow = false;
+      rotationButtonMid = false;
+      rotationButtonTop = false;
+      panelPickupButton = false;
+      forwardTop = false;
+      forwardMid = false;
+      forwardLow = false;
+      forwardPickup = false;
+      retreatVariable = false;
+      flippyBoi = false;
+    }
+
       compressor.setClosedLoopControl(true);
     m_autoSelected = m_chooser.getSelected();
     SmartDashboard.putBoolean("LimitTop", limitTop.get());
