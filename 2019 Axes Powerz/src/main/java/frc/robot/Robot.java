@@ -445,6 +445,7 @@ public class Robot extends TimedRobot{
     } else if (forwardLow == true) {
       placeLow();
     } else if (forwardPickup == true) {
+      clawOpen = false;
       pickup();
     } else if (retreatVariable == true) {
       pinchAndRetreat();
@@ -479,10 +480,10 @@ public class Robot extends TimedRobot{
     if (Xbox.getYButton() && limitWheelBack.get() == false) {
       liftBot.set(.5);
       liftBotSpinLeft.set(-.5);
-      liftBotSpinRight.set(-.5);
+      liftBotSpinRight.set(.5);
     } else if (Xbox.getYButton() && limitWheelBack.get() == true) {
       liftBotSpinLeft.set(-.5);
-      liftBotSpinRight.set(-.5);
+      liftBotSpinRight.set(.5);
     } else if (Xbox.getXButton() && limitWheelFront.get() == false) {
       liftBot.set(-.5);
     }
