@@ -283,7 +283,7 @@ public class Robot extends TimedRobot{
         if (isEnabled()) System.out.println("autocorrect Step 4");
         letsRoll.driveCartesian(.36, 0.0, 0, 0.0);
         // If on the right side of target, go left
-      } else if (area < 5.5 && area > 0) {
+      } else if (area < 5.5 && area > 0 && area != 0) {
         if (isEnabled()) System.out.println("autocorrect Step 5");
         // We need to change the areas above because of the camera's new postition
         letsRoll.driveCartesian(0, .5, 0, 0.0);
