@@ -107,6 +107,11 @@ public class Robot extends TimedRobot {
   // FileWriter writer;
   // PrintWriter printWriter;
 
+  // Here's variables that are for the MecanumDrive, driveRotate for rotation and
+  // driveStrafe for strafing
+  double driveRotate;
+  double driveStrafe;
+
   /**
    * This function is run when the robot is first started up and should be used
    * for any initialization code.
@@ -148,7 +153,6 @@ public class Robot extends TimedRobot {
     encoder1.setDistancePerPulse(.062);
     encoder1.setReverseDirection(false);
     encoder1.setSamplesToAverage(7);
-    forwardPickup = true;
 
   }
 
@@ -163,6 +167,18 @@ public class Robot extends TimedRobot {
    */
   @Override
   public void robotPeriodic() {
+    // Setting the drive variables to what they should be based on where the robot
+    // is and where it is facing
+    if (targetRotation > -45 && targetRotation != 0) {
+      driveRotate = -targetRotation/100;
+    } else if (targetRotation < -45) {
+      driveRotate = -(90+targetRotation)/100;
+    } else {
+      driveRotate = 0;
+    }
+    if (Math.abs(camx)>){
+
+    }
     if (Xbox.getRawButton(7)) {
       rotationButtonLow = false;
       rotationButtonMid = false;
@@ -285,63 +301,45 @@ public class Robot extends TimedRobot {
       System.out
           .println("autocorrect engaged" + ", targetRotation " + targetRotation + ", area " + camarea + ", x " + camx);
 
-    if (Math.abs(targetRotation) >= 75 && Math.abs(targetRotation) <= 89) {
-      if (isEnabled())
-        System.out.println("autocorrect Step 1"); // arc right
-      letsRoll.driveCartesian(.3, 0.0, .125, 0.0);
-    } else if (Math.abs(targetRotation) <= 15 && Math.abs(targetRotation) >= 1) {
-      if (isEnabled())
-        System.out.println("autocorrect Step 2");
-      letsRoll.driveCartesian(-.3, 0.0, -.125, 0.0); // arc left
-    } else {
+    if (45 - Math.abs(45 + targetRotation) + Math.abs(camx) > 5) {
+      letsRoll.driveCartesian(driveStrafe,0,driveRotate);
 
+    } else if (camarea < 20 && camarea > 0) {
       if (isEnabled())
-        System.out.println("autocorrect Step 3");
-      if (camx < -1.5) {
-        letsRoll.driveCartesian(.36, 0.0, 0, 0.0);
-        // If on the left side of target, go right
-      } else if (camx > 1.5) {
+        System.out.println("autocorrect Step 5");
+      // We need to change the areas above because of the camera's new postition
+      letsRoll.driveCartesian(0, .5, 0, 0.0);
+      encoder1.reset();
+    } else {
+      if (isEnabled())
+        System.out.println("autocorrect Step 6");
+      frontleft.set(0);
+      frontright.set(0);
+      rearleft.set(0);
+      rearright.set(0);
+      encoder1.reset();
+      if (rotationButtonTop == true) {
         if (isEnabled())
-          System.out.println("autocorrect Step 4");
-        letsRoll.driveCartesian(-.36, 0.0, 0, 0.0);
-        // If on the right side of target, go left
-      } else if (camarea < 20 && camarea > 0) {
+          System.out.println("autocorrect Initialize go top");
+        rotationButtonTop = false;
+        forwardTop = true;
+        // Makes sure we don't do autocorrect again by using different variables, same
+        // things below
+      } else if (rotationButtonMid == true) {
         if (isEnabled())
-          System.out.println("autocorrect Step 5");
-        // We need to change the areas above because of the camera's new postition
-        letsRoll.driveCartesian(0, .5, 0, 0.0);
-        encoder1.reset();
-      } else {
+          System.out.println("autocorret Initialize go mid");
+        rotationButtonMid = false;
+        forwardMid = true;
+      } else if (rotationButtonLow == true) {
         if (isEnabled())
-          System.out.println("autocorrect Step 6");
-        frontleft.set(0);
-        frontright.set(0);
-        rearleft.set(0);
-        rearright.set(0);
-        encoder1.reset();
-        if (rotationButtonTop == true) {
-          if (isEnabled())
-            System.out.println("autocorrect Initialize go top");
-          rotationButtonTop = false;
-          forwardTop = true;
-          // Makes sure we don't do autocorrect again by using different variables, same
-          // things below
-        } else if (rotationButtonMid == true) {
-          if (isEnabled())
-            System.out.println("autocorret Initialize go mid");
-          rotationButtonMid = false;
-          forwardMid = true;
-        } else if (rotationButtonLow == true) {
-          if (isEnabled())
-            System.out.println("autocorrect Initialize go low");
-          rotationButtonLow = false;
-          forwardLow = true;
-        } else if (panelPickupButton == true) {
-          if (isEnabled())
-            System.out.println("autocorrect Initialize Pickup");
-          panelPickupButton = false;
-          forwardPickup = true;
-        }
+          System.out.println("autocorrect Initialize go low");
+        rotationButtonLow = false;
+        forwardLow = true;
+      } else if (panelPickupButton == true) {
+        if (isEnabled())
+          System.out.println("autocorrect Initialize Pickup");
+        panelPickupButton = false;
+        forwardPickup = true;
       }
     }
   }
@@ -512,6 +510,7 @@ public class Robot extends TimedRobot {
       // gives us control
     }
   }
+
   private void manualOverride() {
     letsRoll.driveCartesian(Xbox.getX(Hand.kLeft), Xbox.getY(Hand.kLeft) * -1, Xbox.getX(Hand.kRight), 0.0);
     if (Xbox.getAButton() && limitFront.get() == false) {
