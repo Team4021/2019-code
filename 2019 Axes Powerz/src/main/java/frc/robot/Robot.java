@@ -508,12 +508,21 @@ public class Robot extends TimedRobot {
     } else if (flippyBoi == true) {
       climbByFlipping();
     } else {
-      letsRoll.driveCartesian(Xbox.getX(Hand.kLeft), Xbox.getY(Hand.kLeft) * -1, Xbox.getX(Hand.kRight), 0.0);
-      // gives us control
+      if (Xbox.getY(Hand.kLeft) < .5 || Xbox.getX(Hand.kLeft) < .5 || Xbox.getX(Hand.kLeft) > -.5 || Xbox.getY(Hand.kLeft) > -.5) {
+        letsRoll.driveCartesian(Xbox.getX(Hand.kLeft) * .5, Xbox.getY(Hand.kLeft) * -.5, Xbox.getX(Hand.kRight) * .5, 0.0);
+         } else {
+          letsRoll.driveCartesian(Xbox.getX(Hand.kLeft), Xbox.getY(Hand.kLeft) * -1, Xbox.getX(Hand.kRight), 0.0);
+        }
+      // gives us control with more precision at low speed
     }
   }
   private void manualOverride() {
-    letsRoll.driveCartesian(Xbox.getX(Hand.kLeft), Xbox.getY(Hand.kLeft) * -1, Xbox.getX(Hand.kRight), 0.0);
+    if (Xbox.getY(Hand.kLeft) < .5 || Xbox.getX(Hand.kLeft) < .5 || Xbox.getX(Hand.kLeft) > -.5 || Xbox.getY(Hand.kLeft) > -.5) {
+      letsRoll.driveCartesian(Xbox.getX(Hand.kLeft) * .5, Xbox.getY(Hand.kLeft) * -.5, Xbox.getX(Hand.kRight) * .5, 0.0);
+       } else {
+        letsRoll.driveCartesian(Xbox.getX(Hand.kLeft), Xbox.getY(Hand.kLeft) * -1, Xbox.getX(Hand.kRight), 0.0);
+      // More precision at low speed
+      }
     if (Xbox.getAButton() && limitFront.get() == false) {
       Spike.set(Relay.Value.kForward);
     } else if (Xbox.getBButton() && limitBack.get() == false) {
