@@ -170,14 +170,21 @@ public class Robot extends TimedRobot {
     // Setting the drive variables to what they should be based on where the robot
     // is and where it is facing
     if (targetRotation > -45 && targetRotation != 0) {
-      driveRotate = -targetRotation/100;
+      driveRotate = -targetRotation / 100;
     } else if (targetRotation < -45) {
-      driveRotate = -(90+targetRotation)/100;
+      driveRotate = -(90 + targetRotation) / 100;
     } else {
       driveRotate = 0;
     }
-    if (Math.abs(camx)>){
-
+    if (targetRotation < -45 && camx > 0) {
+      driveStrafe = camx / 25;
+    } else {
+      driveStrafe = -camx / 25;
+    }
+    if (targetRotation > -45 && camx < 0) {
+      driveStrafe = camx / 25;
+    } else {
+      driveStrafe = -camx / 25;
     }
     if (Xbox.getRawButton(7)) {
       rotationButtonLow = false;
@@ -249,48 +256,8 @@ public class Robot extends TimedRobot {
     }
   }
 
-  /**
-   * This autonomous (along with the chooser code above) shows how to select
-   * between different autonomous modes using the dashboard. The sendable chooser
-   * code works with the Java SmartDashboard. If you prefer the LabVIEW Dashboard,
-   * remove all of the chooser code and uncomment the getString line to get the
-   * auto name from the text box below the Gyro
-   *
-   * <p>
-   * You can add additional auto modes by adding additional comparisons to the
-   * switch structure below with additional strings. If using the SendableChooser
-   * make sure to add them to the chooser code above as well.
-   */
-  @Override
-  public void autonomousInit() {
-    m_autoSelected = m_chooser.getSelected();
-    // autoSelected = SmartDashboard.getString("Auto Selector",
-    // defaultAuto);
-    // System.out.println("Auto selected: " + m_autoSelected);
-  }
-
-  /**
-   * This function is called periodically during autonomous.
-   */
-  @Override
-  public void autonomousPeriodic() {
-  }
-
-  /**
-   * This function is called periodically during operator control.
-   */
-  @Override
-  public void teleopPeriodic() {
-
-  }
-
-  /**
-   * This function is called periodically during test mode.
-   */
-  @Override
-  public void testPeriodic() {
-  }
-
+  // I took out the teleop periodic, auto init, auto periodic cause they aren't
+  // being used
   private void autoCorrect() {
     if (Xbox.getRawButton(5)) {
       clawOpen = true;
@@ -302,7 +269,7 @@ public class Robot extends TimedRobot {
           .println("autocorrect engaged" + ", targetRotation " + targetRotation + ", area " + camarea + ", x " + camx);
 
     if (45 - Math.abs(45 + targetRotation) + Math.abs(camx) > 5) {
-      letsRoll.driveCartesian(driveStrafe,0,driveRotate);
+      letsRoll.driveCartesian(driveStrafe, 0, driveRotate);
 
     } else if (camarea < 20 && camarea > 0) {
       if (isEnabled())
