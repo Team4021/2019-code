@@ -112,7 +112,8 @@ public class Robot extends TimedRobot {
    * for any initialization code.
    */
   @Override
-  public void robotInit() {
+  public void robotInit() 
+  {
     m_chooser.setDefaultOption("limelight", limelightMethod);
     m_chooser.addOption("JackDrive", jackdrive);
     SmartDashboard.putData("drive choices", m_chooser);
@@ -148,8 +149,6 @@ public class Robot extends TimedRobot {
     encoder1.setDistancePerPulse(.062);
     encoder1.setReverseDirection(false);
     encoder1.setSamplesToAverage(7);
-    forwardPickup = true;
-
   }
 
   /**
@@ -162,8 +161,10 @@ public class Robot extends TimedRobot {
    * and SmartDashboard integrated updating.
    */
   @Override
-  public void robotPeriodic() {
-    if (Xbox.getRawButton(7)) {
+  public void robotPeriodic() 
+  {
+    if (Xbox.getRawButton(7)) 
+    {
       rotationButtonLow = false;
       rotationButtonMid = false;
       rotationButtonTop = false;
@@ -175,7 +176,8 @@ public class Robot extends TimedRobot {
       retreatVariable = false;
       flippyBoi = false;
     }
-    if (isDisabled()) {
+    if (isDisabled()) 
+    {
       rotationButtonLow = false;
       rotationButtonMid = false;
       rotationButtonTop = false;
@@ -216,18 +218,20 @@ public class Robot extends TimedRobot {
     SmartDashboard.putNumber("LimelightRotation", targetRotation); // displays rotation of target
     NetworkTableInstance.getDefault().getTable("limelight").getEntry("ledMode").setNumber(0);
     NetworkTableInstance.getDefault().getTable("limelight").getEntry("camMode").setNumber(0);
-    if (clawOpen == true) {
+    if (clawOpen == true) 
+    {
       solenoid.set(true);
     } else {
       solenoid.set(false);
     }
     // System.out.println("auto select is " + m_autoSelected);
-    switch (m_autoSelected) {
-    case limelightMethod:
-      Normal();
-      break;
-    case jackdrive:
-    default:
+    switch (m_autoSelected) 
+    {
+      case limelightMethod: Normal();
+           break;
+      
+      case jackdrive:
+      default:
       manualOverride();
       break;
     }
@@ -247,7 +251,7 @@ public class Robot extends TimedRobot {
    */
   @Override
   public void autonomousInit() {
-    m_autoSelected = m_chooser.getSelected();
+    //m_autoSelected = m_chooser.getSelected();
     // autoSelected = SmartDashboard.getString("Auto Selector",
     // defaultAuto);
     // System.out.println("Auto selected: " + m_autoSelected);
@@ -272,88 +276,142 @@ public class Robot extends TimedRobot {
    * This function is called periodically during test mode.
    */
   @Override
-  public void testPeriodic() {
+  public void testPeriodic() 
+  {
   }
 
-  private void autoCorrect() {
-    if (Xbox.getRawButton(5)) {
+  private void autoCorrect() 
+  {
+    if (Xbox.getRawButton(5)) 
+    {
       clawOpen = true;
-    } else if (Xbox.getRawButton(6)) {
+    } 
+    else if (Xbox.getRawButton(6)) 
+    {
       clawOpen = false;
     }
+
     if (isEnabled())
-      System.out
-          .println("autocorrect engaged" + ", targetRotation " + targetRotation + ", area " + camarea + ", x " + camx);
+    {
+      System.out.println("autocorrect engaged" + ", targetRotation " + targetRotation + ", area " + camarea + ", x " + camx);
+    }
 
-    if (Math.abs(targetRotation) >= 75 && Math.abs(targetRotation) <= 89) {
+    if (Math.abs(targetRotation) >= 75 && Math.abs(targetRotation) <= 89) 
+    {
       if (isEnabled())
-        System.out.println("autocorrect Step 1"); // arc right
+      {
+        System.out.println("autocorrect Step 1"); 
+      }
+      // arc right
       letsRoll.driveCartesian(.3, 0.0, .125, 0.0);
-    } else if (Math.abs(targetRotation) <= 15 && Math.abs(targetRotation) >= 1) {
+    }
+    else if (Math.abs(targetRotation) >= 1 && Math.abs(targetRotation) <= 15) 
+    {
       if (isEnabled())
+      {
         System.out.println("autocorrect Step 2");
+      }
       letsRoll.driveCartesian(-.3, 0.0, -.125, 0.0); // arc left
-    } else {
-
+    } 
+    else 
+    {
       if (isEnabled())
+      {
         System.out.println("autocorrect Step 3");
-      if (camx < -1.5) {
+      }
+      if (camx < -1.5) 
+      {
         letsRoll.driveCartesian(.36, 0.0, 0, 0.0);
         // If on the left side of target, go right
-      } else if (camx > 1.5) {
+      } 
+      else if (camx > 1.5) 
+      {
         if (isEnabled())
+        {
           System.out.println("autocorrect Step 4");
+        }
         letsRoll.driveCartesian(-.36, 0.0, 0, 0.0);
         // If on the right side of target, go left
-      } else if (camarea < 20 && camarea > 0) {
+      } 
+      else if (camarea > 0 && camarea < 20) 
+      {
         if (isEnabled())
+        {
           System.out.println("autocorrect Step 5");
+        }
         // We need to change the areas above because of the camera's new postition
         letsRoll.driveCartesian(0, .5, 0, 0.0);
         encoder1.reset();
-      } else {
+      } 
+      else 
+      {
         if (isEnabled())
+        {
           System.out.println("autocorrect Step 6");
+        }
         frontleft.set(0);
         frontright.set(0);
         rearleft.set(0);
         rearright.set(0);
         encoder1.reset();
-        if (rotationButtonTop == true) {
+        if (rotationButtonTop == true) 
+        {
           if (isEnabled())
+          {
             System.out.println("autocorrect Initialize go top");
+          }
           rotationButtonTop = false;
           forwardTop = true;
           // Makes sure we don't do autocorrect again by using different variables, same
           // things below
-        } else if (rotationButtonMid == true) {
+        } 
+        else if (rotationButtonMid == true) 
+        {
           if (isEnabled())
+          {
             System.out.println("autocorret Initialize go mid");
+          }
           rotationButtonMid = false;
           forwardMid = true;
-        } else if (rotationButtonLow == true) {
+        } 
+        else if (rotationButtonLow == true) 
+        {
           if (isEnabled())
+          {
             System.out.println("autocorrect Initialize go low");
+          }
           rotationButtonLow = false;
           forwardLow = true;
-        } else if (panelPickupButton == true) {
+        } 
+        else if (panelPickupButton == true) 
+        {
           if (isEnabled())
+          {
             System.out.println("autocorrect Initialize Pickup");
+          }
           panelPickupButton = false;
           forwardPickup = true;
+          clawOpen = false;
         }
       }
     }
   }
+  
 
-  private void placeTop() { // Test top first!!! Not others
-    if (limitTop.get() == false) {
+  private void placeTop() 
+  { // Test top first!!! Not others
+    if (limitTop.get() == false) 
+    {
       liftMotor.set(.75);
       // If the top limit switch is not pressed, go up
-    } else if (limitFront.get() == false) {
+    } 
+    else if (limitFront.get() == false) 
+    {
       // Spike.set(Value.kForward);
       // If the front limit switch is not pressed, move the claw forward
-    } else {
+    } 
+    else 
+    {
       forwardTop = false;
       letsRoll.driveCartesian(0, 0, 0);
       retreatVariable = true;
@@ -362,14 +420,20 @@ public class Robot extends TimedRobot {
     }
   }
 
-  private void placeMid() {
-    if (limitMid.get() == false) {
+  private void placeMid() 
+  {
+    if (limitMid.get() == false) 
+    {
       liftMotor.set(.75);
       // If the top limit switch is not pressed, go up
-    } else if (limitFront.get() == false) {
-      // Spike.set(Value.kForward);
+    } 
+    else if (limitFront.get() == false) 
+    {
+      Spike.set(Value.kForward);
       // If the front limit switch is not pressed, move the claw forward
-    } else {
+    } 
+    else 
+    {
       forwardMid = false;
       letsRoll.driveCartesian(0, 0, 0);
       retreatVariable = true;
@@ -377,61 +441,81 @@ public class Robot extends TimedRobot {
     }
   }
 
-  private void placeLow() {
-    if (limitLow.get() == false) {
+  private void placeLow() 
+  {
+    if (limitLow.get() == false) 
+    {
       liftMotor.set(-.75);
       // If the top limit switch is not pressed, go down
-    } else if (limitFront.get() == false) {
+    } 
+    else if (limitFront.get() == false) 
+    {
       Spike.set(Value.kForward);
       // If the front limit switch is not pressed, move the claw forward
-    } else {
+    } 
+    else 
+    {
       forwardLow = false;
       letsRoll.driveCartesian(0, 0, 0);
       retreatVariable = true;
       encoder1.reset();
       // Don't repeat this method, stop, prepare to pinchAndRetreat
     }
-
   }
 
-  private void pickup() {
-    if (limitLow.get() == false) {
+  private void pickup() 
+  {
+    if (limitLow.get() == false) 
+    {
       liftMotor.set(-.36);
       // If the lift isn't in the lowest setting (sensed by limit switch) go down
-    } else if (limitFront.get() == false && clawOpen == false) {
+    } 
+    else if (limitFront.get() == false && clawOpen == false) 
+    {
       Spike.set(Value.kForward);
       // If the claw isn't forward and isn't open, move the claw forward (and
       // statement explained below)
-    } else if (clawOpen == false) {
+    } 
+    else if (clawOpen == false) 
+    {
       clawOpen = true;
-      solenoid.set(true);
+      //solenoid.set(true);
       // Makes sure the claw is open
-    } else if (distance > -10) {
+    } else if (distance > -10) 
+    {
       letsRoll.driveCartesian(0, -.5, 0);
       // Moves backwards until the encoder is low enough
-    } else if (limitBack.get() == false) {
+    } 
+    else if (limitBack.get() == false) 
+    {
       Spike.set(Value.kReverse);
       // If the claw isn't in the back position, move back. If we didn't have the and
       // statement, it would get stuck going back and forth between these statements
-    } else {
+    } 
+    else 
+    {
       forwardPickup = false;
       // Don't repeat this method
     }
   }
 
-  private void pinchAndRetreat() {
+  private void pinchAndRetreat() 
+  {
     clawOpen = false;
     solenoid.set(false);
-    if (distance > -10) {
+    if (distance > -10) 
+    {
       letsRoll.driveCartesian(0, -.5, 0);
       // Move back until the encoder gets to -10
-    } else {
+    } else 
+    {
       retreatVariable = false;
       // Don't repeat this method
     }
   }
 
-  private void climbByFlipping() {
+  private void climbByFlipping() 
+  {
     encoder1.reset();
 
     // Move claw back
@@ -440,25 +524,31 @@ public class Robot extends TimedRobot {
     // When at the top, stop
   }
 
-  private void Normal() {
-    if (Xbox.getXButtonPressed()) {
+  private void Normal() 
+  {
+    if (Xbox.getXButtonPressed()) 
+    {
       rotationButtonTop = true;
     } // starts panel place on top
-    if (Xbox.getYButtonPressed()) {
+    if (Xbox.getYButtonPressed()) 
+    {
       rotationButtonMid = true;
     } // starts panel place on Mid
-    if (Xbox.getBButtonPressed()) {
+    if (Xbox.getBButtonPressed()) 
+    {
       rotationButtonLow = true;
     } // starts panel place on Low
-    if (Xbox.getAButtonPressed()) {
+    if (Xbox.getAButtonPressed()) 
+    {
       panelPickupButton = true;
     } // starts panel pickup
     /*
      * if (Xbox.getRawButtonPressed(5)) { flippyBoi = true; }
      */
     if (Xbox.getY(Hand.kLeft) > .4 || Xbox.getX(Hand.kLeft) > .4 || Xbox.getX(Hand.kLeft) < -.4
-        || Xbox.getY(Hand.kLeft) < -.4) {
-      // Jumps out of semiautonomous if joystick is moved far enough
+        || Xbox.getY(Hand.kLeft) < -.4) 
+    {
+          // Jumps out of semiautonomous if joystick is moved far enough
       System.out.println("Failsafe activated");
       rotationButtonLow = false;
       rotationButtonMid = false;
@@ -471,20 +561,22 @@ public class Robot extends TimedRobot {
       retreatVariable = false;
       flippyBoi = false;
     }
-    if (isEnabled()) {
+    if (isEnabled()) 
+    {
       System.out.println("Line 407: rotationbuttonTop = " + rotationButtonTop + ", rotationbuttonMid = "
-          + rotationButtonMid + ", rotationbuttonLow = " + rotationButtonLow + ", panelPickupButton = "
-          + panelPickupButton + ", flipper = " + flippyBoi);
+      + rotationButtonMid + ", rotationbuttonLow = " + rotationButtonLow + ", panelPickupButton = "
+      + panelPickupButton + ", flipper = " + flippyBoi);
       System.out.println("Line 408: forwardTop = " + forwardTop + ", forwardMid = " + forwardMid + ", forwardLow = "
-          + forwardLow + ", forwardPickup = " + forwardPickup + ", retreatVariable = " + retreatVariable
-          + ", flippyBoi = " + flippyBoi);
+      + forwardLow + ", forwardPickup = " + forwardPickup + ", retreatVariable = " + retreatVariable
+      + ", flippyBoi = " + flippyBoi);
     }
     // printWriter.printf("Line 407: rotationbuttonTop = " + rotationButtonTop + ",
     // rotationbuttonMid = " + rotationButtonMid + ", rotationbuttonLow = " +
     // rotationButtonLow + ", panelPickupButton = " + panelPickupButton + ", flipper
     // = " + flippyBoi);
-    if (rotationButtonTop == true || rotationButtonMid == true || rotationButtonLow == true
-        || panelPickupButton == true) {
+    
+    if (rotationButtonTop == true || rotationButtonMid == true || rotationButtonLow == true || panelPickupButton == true) 
+    {
       // If any buttons are true, go to autoCorrect
       // They go below because they are different variables
       camx = tx.getDouble(0.0);
@@ -492,21 +584,32 @@ public class Robot extends TimedRobot {
       camarea = ta.getDouble(0.0);
       targetRotation = ts.getDouble(0.0);
       autoCorrect();
-    } else if (forwardTop == true) {
+    } 
+    else if (forwardTop == true) 
+    {
       placeTop();
       // In these and the following, we go to the desired method
-    } else if (forwardMid == true) {
+    } 
+    else if (forwardMid == true) 
+    {
       placeMid();
-    } else if (forwardLow == true) {
+    } 
+    else if (forwardLow == true) 
+    {
       placeLow();
-    } else if (forwardPickup == true) {
-      clawOpen = false;
-      solenoid.set(false);
+    } 
+    else if (forwardPickup == true) 
+    {
       pickup();
-    } else if (retreatVariable == true) {
+    } 
+    else if (retreatVariable == true) 
+    {
       pinchAndRetreat();
-    } else if (flippyBoi == true) {
+    } 
+    else if (flippyBoi == true) 
+    {
       climbByFlipping();
+<<<<<<< HEAD
     } else {
       if (Xbox.getY(Hand.kLeft) < .5 || Xbox.getX(Hand.kLeft) < .5 || Xbox.getX(Hand.kLeft) > -.5 || Xbox.getY(Hand.kLeft) > -.5) {
         letsRoll.driveCartesian(Xbox.getX(Hand.kLeft) * .5, Xbox.getY(Hand.kLeft) * -.5, Xbox.getX(Hand.kRight) * .5, 0.0);
@@ -524,34 +627,71 @@ public class Robot extends TimedRobot {
       // More precision at low speed
       }
     if (Xbox.getAButton() && limitFront.get() == false) {
+=======
+    } 
+    else 
+    {
+      letsRoll.driveCartesian(Xbox.getX(Hand.kLeft), Xbox.getY(Hand.kLeft) * -1, Xbox.getX(Hand.kRight), 0.0);
+      // gives us control
+    }
+  }
+
+  private void manualOverride() 
+  {
+    letsRoll.driveCartesian(Xbox.getX(Hand.kLeft), Xbox.getY(Hand.kLeft) * -1, Xbox.getX(Hand.kRight), 0.0);
+    if (Xbox.getAButton() && limitFront.get() == false) 
+    {
+>>>>>>> bbae0444c591b4f32ebf5ac2d842387a3291d157
       Spike.set(Relay.Value.kForward);
-    } else if (Xbox.getBButton() && limitBack.get() == false) {
+    }
+    else if (Xbox.getBButton() && limitBack.get() == false) 
+    {
       Spike.set(Relay.Value.kReverse);
-    } else {
+    }
+    else 
+    {
       Spike.set(Relay.Value.kOff);
     }
-    if (Xbox.getTriggerAxis(Hand.kRight) > 0 && limitTop.get() == false) {
+
+    if (Xbox.getTriggerAxis(Hand.kRight) > 0 && limitTop.get() == false) 
+    {
       liftMotor.set(Xbox.getTriggerAxis(Hand.kRight));
-    } else if (Xbox.getTriggerAxis(Hand.kLeft) > 0 && limitLow.get() == false) {
+    } 
+    else if (Xbox.getTriggerAxis(Hand.kLeft) > 0 && limitLow.get() == false) 
+    {
       liftMotor.set(-Xbox.getTriggerAxis(Hand.kLeft) / 2);
-    } else {
+    } 
+    else 
+    {
       liftMotor.set(0);
     }
-    if (Xbox.getRawButton(5)) {
+
+    if (Xbox.getRawButton(5)) 
+    {
       clawOpen = true;
-    } else if (Xbox.getRawButton(6)) {
+    } 
+    else if (Xbox.getRawButton(6)) 
+    {
       clawOpen = false;
     }
-    if (Xbox.getYButton() && limitWheelBack.get() == false) {
+
+    if (Xbox.getYButton() && limitWheelBack.get() == false) 
+    {
       liftBot.set(.5);
       liftBotSpinLeft.set(-.5);
       liftBotSpinRight.set(.5);
-    } else if (Xbox.getYButton() && limitWheelBack.get() == true) {
+    } 
+    else if (Xbox.getYButton() && limitWheelBack.get() == true) 
+    {
       liftBotSpinLeft.set(-.5);
       liftBotSpinRight.set(.5);
-    } else if (Xbox.getXButton() && limitWheelFront.get() == false) {
+    } 
+    else if (Xbox.getXButton() && limitWheelFront.get() == false) 
+    {
       liftBot.set(-.5);
-    } else {
+    } 
+    else 
+    {
       liftBot.set(0);
       liftBotSpinLeft.set(0);
       liftBotSpinRight.set(0);
