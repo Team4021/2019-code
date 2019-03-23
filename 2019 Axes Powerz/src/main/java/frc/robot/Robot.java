@@ -163,6 +163,15 @@ public class Robot extends TimedRobot {
   @Override
   public void robotPeriodic() 
   {
+    SmartDashboard.putBoolean("rotationButtonLow " , rotationButtonLow);
+    SmartDashboard.putBoolean("rotationButtonMid " , rotationButtonMid);
+    SmartDashboard.putBoolean("rotationButtonTop " , rotationButtonTop);
+    SmartDashboard.putBoolean("panelPickupButton " , panelPickupButton);
+    SmartDashboard.putBoolean("forwardTop " , forwardTop);
+    SmartDashboard.putBoolean("forwardMid " , forwardMid);
+    SmartDashboard.putBoolean("forwardLow " , forwardLow);
+    SmartDashboard.putBoolean("forwardPickup " , forwardPickup);
+    SmartDashboard.putBoolean("retreatVariable " , retreatVariable);
     if (Xbox.getRawButton(7)) 
     {
       rotationButtonLow = false;
@@ -610,20 +619,24 @@ public class Robot extends TimedRobot {
     {
       climbByFlipping();
     } else {
-      if (Xbox.getY(Hand.kLeft) < .5 || Xbox.getX(Hand.kLeft) < .5 || Xbox.getX(Hand.kLeft) > -.5 || Xbox.getY(Hand.kLeft) > -.5) {
-        letsRoll.driveCartesian(Xbox.getX(Hand.kLeft) * .5, Xbox.getY(Hand.kLeft) * -.5, Xbox.getX(Hand.kRight) * .5, 0.0);
-         } else {
-          letsRoll.driveCartesian(Xbox.getX(Hand.kLeft), Xbox.getY(Hand.kLeft) * -1, Xbox.getX(Hand.kRight), 0.0);
+      if (Math.abs(Xbox.getY(Hand.kLeft)) > .5 || Math.abs(Xbox.getX(Hand.kLeft)) > .5) {
+        letsRoll.driveCartesian(Xbox.getX(Hand.kLeft), Xbox.getY(Hand.kLeft) * -1, Xbox.getX(Hand.kRight), 0.0);
+         } else if (Math.abs(Xbox.getY(Hand.kRight)) < .5 &&  (Math.abs(Xbox.getY(Hand.kRight)) > .15) || Math.abs(Xbox.getX(Hand.kRight)) < .5 &&  (Math.abs(Xbox.getY(Hand.kRight)) > .15)) {
+          letsRoll.driveCartesian(Xbox.getX(Hand.kLeft) * .5, Xbox.getY(Hand.kLeft) * -.5, Xbox.getX(Hand.kRight) * .5, 0.0);
+         }
+         else {
+          letsRoll.driveCartesian(Xbox.getX(Hand.kLeft) * .5, Xbox.getY(Hand.kLeft) * -.5, Xbox.getX(Hand.kRight) * .5, 0.0);
         }
       // gives us control with more precision at low speed
     }
   }
   private void manualOverride() {
-    if (Xbox.getY(Hand.kLeft) < .5 || Xbox.getX(Hand.kLeft) < .5 || Xbox.getX(Hand.kLeft) > -.5 || Xbox.getY(Hand.kLeft) > -.5) {
-      letsRoll.driveCartesian(Xbox.getX(Hand.kLeft) * .5, Xbox.getY(Hand.kLeft) * -.5, Xbox.getX(Hand.kRight) * .5, 0.0);
+    if (Math.abs(Xbox.getY(Hand.kLeft)) > .5 || Math.abs(Xbox.getX(Hand.kLeft)) > .5) {
+      letsRoll.driveCartesian(Xbox.getX(Hand.kLeft), Xbox.getY(Hand.kLeft) * -1, Xbox.getX(Hand.kRight), 0.0);
+       } else if (Math.abs(Xbox.getY(Hand.kRight)) < .5 &&  (Math.abs(Xbox.getY(Hand.kRight)) > .15) || Math.abs(Xbox.getX(Hand.kRight)) < .5 &&  (Math.abs(Xbox.getY(Hand.kRight)) > .15)) {
+        letsRoll.driveCartesian(Xbox.getX(Hand.kLeft) * .5, Xbox.getY(Hand.kLeft) * -.5, Xbox.getX(Hand.kRight) * .5, 0.0);
        } else {
-        letsRoll.driveCartesian(Xbox.getX(Hand.kLeft), Xbox.getY(Hand.kLeft) * -1, Xbox.getX(Hand.kRight), 0.0);
-      // More precision at low speed
+        letsRoll.driveCartesian(Xbox.getX(Hand.kLeft) * .5, Xbox.getY(Hand.kLeft) * -.5, Xbox.getX(Hand.kRight) * .5, 0.0);
       }
     if (Xbox.getAButton() && limitFront.get() == false) {
       Spike.set(Relay.Value.kForward);
