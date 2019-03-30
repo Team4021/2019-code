@@ -311,7 +311,7 @@ public class Robot extends TimedRobot {
       {
         System.out.println("autocorrect Step 1"); 
       }
-      // arc right
+      // arc left
       letsRoll.driveCartesian(.3, 0.0, .125, 0.0);
     }
     else if (Math.abs(targetRotation) >= 1 && Math.abs(targetRotation) <= 15) 
@@ -320,17 +320,18 @@ public class Robot extends TimedRobot {
       {
         System.out.println("autocorrect Step 2");
       }
-      letsRoll.driveCartesian(-.3, 0.0, -.125, 0.0); // arc left
+      letsRoll.driveCartesian(-.3, 0.0, -.125, 0.0);
+       // arc right
     } 
     else 
-    {
+    { 
       if (isEnabled())
       {
         System.out.println("autocorrect Step 3");
       }
       if (camx < -1.5) 
       {
-        letsRoll.driveCartesian(.36, 0.0, 0, 0.0);
+        letsRoll.driveCartesian(-.36, 0.0, 0, 0.0);
         // If on the left side of target, go right
       } 
       else if (camx > 1.5) 
@@ -339,10 +340,10 @@ public class Robot extends TimedRobot {
         {
           System.out.println("autocorrect Step 4");
         }
-        letsRoll.driveCartesian(-.36, 0.0, 0, 0.0);
+        letsRoll.driveCartesian(.36, 0.0, 0, 0.0);
         // If on the right side of target, go left
       } 
-      else if (camarea > 0 && camarea < 20) 
+      else if (camarea > 0 && camarea < 19.4) 
       {
         if (isEnabled())
         {
