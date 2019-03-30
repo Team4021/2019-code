@@ -26,6 +26,7 @@ import edu.wpi.first.wpilibj.Encoder;
 import edu.wpi.first.wpilibj.Compressor;
 import edu.wpi.first.wpilibj.AnalogInput;
 import edu.wpi.first.wpilibj.Solenoid;
+import edu.wpi.first.wpilibj.Spark;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.Relay;
 
@@ -80,12 +81,12 @@ public class Robot extends TimedRobot {
   float Kp;
   VictorSP rearleft;
   VictorSP rearright;
-  VictorSP frontleft;
+  Spark frontleft;
   VictorSP frontright;
-  VictorSP liftMotor;
+  Spark liftMotor;
   VictorSP liftBot;
   VictorSP liftBotSpinRight;
-  VictorSP liftBotSpinLeft;
+  Spark liftBotSpinLeft;
   Relay Spike;
   Encoder encoder1;
   Compressor compressor = new Compressor(0);
@@ -100,6 +101,7 @@ public class Robot extends TimedRobot {
   DigitalInput limitWheelBack;
   // FileWriter writer;
   // PrintWriter printWriter;
+  double strafeSpeed;
 
   /**
    * This function is run when the robot is first started up and should be used
@@ -118,14 +120,14 @@ public class Robot extends TimedRobot {
     limitWheelFront = new DigitalInput(2);
     limitWheelBack = new DigitalInput(3);
     // Ports are subject to change,
-    rearleft = new VictorSP(4); // 3 on prototype
+    rearleft = new VictorSP(7); // 3 on prototype
     rearright = new VictorSP(3); // 0 on prototype
-    frontleft = new VictorSP(6); // 2 on prototype
-    frontright = new VictorSP(2); // 1 prototype
-    liftMotor = new VictorSP(0); // 4 prototype
-    liftBot = new VictorSP(5);
-    liftBotSpinLeft = new VictorSP(1);
-    liftBotSpinRight = new VictorSP(7);
+    frontleft = new Spark(4); // 2 on prototype
+    frontright = new VictorSP(0); // 1 prototype
+    liftMotor = new Spark(5); // 4 prototype
+    liftBot = new VictorSP(2);
+    liftBotSpinLeft = new Spark(6);
+    liftBotSpinRight = new VictorSP(1);
     Spike = new Relay(0);
     Xbox = new XboxController(0);
     letsRoll = new MecanumDrive(frontleft, rearleft, frontright, rearright);
@@ -205,6 +207,10 @@ public class Robot extends TimedRobot {
     camx = tx.getDouble(0.0);
     camy = ty.getDouble(0.0);
     camarea = ta.getDouble(0.0);
+    strafeSpeed = Math.abs(camx/20) > .2 ? camx/20 : Math.signum(camx) * .2;
+    if (isEnabled()) {
+    System.out.println("Line 211, strafeSpeed = " + strafeSpeed);
+  }
     // double longestSide = tlong.getDouble(0.0);
     // double shortestSide = tshort.getDouble(0.0);
     // double targetWidth = thor.getDouble(0.0);
@@ -289,41 +295,53 @@ public class Robot extends TimedRobot {
           .println("autocorrect engaged" + ", targetRotation " + targetRotation + ", area " + camarea + ", x " + camx);
     }
 
-    if (Math.abs(targetRotation) >= 75 && Math.abs(targetRotation) <= 89) {
+    if (Math.abs(targetRotation) >= 75 && Math.abs(targetRotation) <= 87) {
       if (isEnabled()) {
-        System.out.println("autocorrect Step 1");
+        System.out.println("autocorrect correcting rotation");
       }
       // arc left
       letsRoll.driveCartesian(.3, 0.0, .125, 0.0);
-    } else if (Math.abs(targetRotation) >= 1 && Math.abs(targetRotation) <= 15) {
+    } else if (Math.abs(targetRotation) >= 3 && Math.abs(targetRotation) <= 15) {
       if (isEnabled()) {
-        System.out.println("autocorrect Step 2");
+        System.out.println("autocorrect correcting rotation");
       }
       letsRoll.driveCartesian(-.3, 0.0, -.125, 0.0);
       // arc right
     } else {
-      if (isEnabled()) {
-        System.out.println("autocorrect Step 3");
-      }
       if (camx < -1.5) {
-        letsRoll.driveCartesian(.36, 0.0, 0, 0.0);
+        if (isEnabled()) {
+          System.out.println("autocorrect Strafe right");
+        }
+        frontleft.set(strafeSpeed);
+        rearleft.set(-strafeSpeed);
+        frontright.set(strafeSpeed);
+        rearright.set(-strafeSpeed);
+        //letsRoll.driveCartesian(-.36, 0.0, 0, 0.0);
         // If on the left side of target, go right
       } else if (camx > 1.5) {
         if (isEnabled()) {
-          System.out.println("autocorrect Step 4");
+          System.out.println("autocorrect Strafe left");
         }
-        letsRoll.driveCartesian(-.36, 0.0, 0, 0.0);
+        frontleft.set(strafeSpeed);
+        rearleft.set(-strafeSpeed);
+        frontright.set(strafeSpeed);
+        rearright.set(-strafeSpeed);
+        //letsRoll.driveCartesian(.36, 0.0, 0, 0.0);
         // If on the right side of target, go left
-      } else if (camarea > 0 && camarea < 19.4) {
+      } else if (camarea >= 0 && camarea < 19.4) {
         if (isEnabled()) {
-          System.out.println("autocorrect Step 5");
+          System.out.println("autocorrect move forward");
         }
+        frontleft.set(.25);
+        rearleft.set(.25);
+        frontright.set(-.25);
+        rearright.set(-.25);
         // We need to change the areas above because of the camera's new postition
-        letsRoll.driveCartesian(0, .5, 0, 0.0);
+        //letsRoll.driveCartesian(0, .3, 0, 0.0);
         encoder1.reset();
       } else {
         if (isEnabled()) {
-          System.out.println("autocorrect Step 6");
+          System.out.println("autocorrect lined up");
         }
         frontleft.set(0);
         frontright.set(0);
@@ -410,6 +428,7 @@ public class Robot extends TimedRobot {
   }
 
   private void pickup() {
+    System.out.println("Into pickup" + ", targetRotation " + targetRotation + ", area " + camarea + ", x " + camx);
     if (limitLow.get() == false) {
       // liftMotor.set(-.36);
       // If the lift isn't in the lowest setting (sensed by limit switch) go down
@@ -422,8 +441,9 @@ public class Robot extends TimedRobot {
       // solenoid.set(true);
       // Makes sure the claw is open
     } else if (distance > -10) {
-      letsRoll.driveCartesian(0, -.5, 0);
+      // letsRoll.driveCartesian(0, -.5, 0);
       // Moves backwards until the encoder is low enough
+      System.out.println("We're into pickup (line 440)");
     } else if (limitBack.get() == false) {
       Spike.set(Value.kReverse);
       // If the claw isn't in the back position, move back. If we didn't have the and
@@ -569,14 +589,14 @@ public class Robot extends TimedRobot {
       clawOpen = false;
     }
 
-    if (Xbox.getYButton() && limitWheelBack.get() == false) {
+    if (Xbox.getYButton() && limitWheelBack.get() == true) {
       liftBot.set(.5);
       liftBotSpinLeft.set(-.5);
       liftBotSpinRight.set(.5);
-    } else if (Xbox.getYButton() && limitWheelBack.get() == true) {
+    } else if (Xbox.getYButton() && limitWheelBack.get() == false) {
       liftBotSpinLeft.set(-.5);
       liftBotSpinRight.set(.5);
-    } else if (Xbox.getXButton() && limitWheelFront.get() == false) {
+    } else if (Xbox.getXButton() && limitWheelFront.get() == true) {
       liftBot.set(-.5);
     } else {
       liftBot.set(0);
