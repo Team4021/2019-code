@@ -364,7 +364,7 @@ public class Robot extends TimedRobot {
 
   private void placeTop() { // Test top first!!! Not others
     if (limitTop.get() == false) {
-      liftMotor.set(.75);
+      // liftMotor.set(.75);
       // If the top limit switch is not pressed, go up
     } else if (limitFront.get() == false) {
       // Spike.set(Value.kForward);
@@ -380,7 +380,7 @@ public class Robot extends TimedRobot {
 
   private void placeMid() {
     if (limitMid.get() == false) {
-      liftMotor.set(.75);
+      // liftMotor.set(.75);
       // If the top limit switch is not pressed, go up
     } else if (limitFront.get() == false) {
       Spike.set(Value.kForward);
@@ -395,7 +395,7 @@ public class Robot extends TimedRobot {
 
   private void placeLow() {
     if (limitLow.get() == false) {
-      liftMotor.set(-.75);
+      // liftMotor.set(-.75);
       // If the top limit switch is not pressed, go down
     } else if (limitFront.get() == false) {
       Spike.set(Value.kForward);
@@ -411,7 +411,7 @@ public class Robot extends TimedRobot {
 
   private void pickup() {
     if (limitLow.get() == false) {
-      liftMotor.set(-.36);
+      // liftMotor.set(-.36);
       // If the lift isn't in the lowest setting (sensed by limit switch) go down
     } else if (limitFront.get() == false && clawOpen == false) {
       Spike.set(Value.kForward);
