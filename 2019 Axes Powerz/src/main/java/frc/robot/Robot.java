@@ -128,7 +128,7 @@ public class Robot extends TimedRobot {
     liftBotSpinRight = new VictorSP(7);
     Spike = new Relay(0);
     Xbox = new XboxController(0);
-    letsRoll = new MecanumDrive(frontleft, rearleft, frontright, rearright);
+   // letsRoll = new MecanumDrive(frontleft, rearleft, frontright, rearright);
     // Safety errors if the following are true
     rearright.setSafetyEnabled(false);
     rearleft.setSafetyEnabled(false);
@@ -294,32 +294,32 @@ public class Robot extends TimedRobot {
         System.out.println("autocorrect Step 1");
       }
       // arc left
-      letsRoll.driveCartesian(.3, 0.0, .125, 0.0);
+      //letsRoll.driveCartesian(.3, 0.0, .125, 0.0);
     } else if (Math.abs(targetRotation) >= 1 && Math.abs(targetRotation) <= 15) {
       if (isEnabled()) {
         System.out.println("autocorrect Step 2");
       }
-      letsRoll.driveCartesian(-.3, 0.0, -.125, 0.0);
+      //letsRoll.driveCartesian(-.3, 0.0, -.125, 0.0);
       // arc right
     } else {
       if (isEnabled()) {
         System.out.println("autocorrect Step 3");
       }
       if (camx < -1.5) {
-        letsRoll.driveCartesian(.36, 0.0, 0, 0.0);
+       // letsRoll.driveCartesian(.36, 0.0, 0, 0.0);
         // If on the left side of target, go right
       } else if (camx > 1.5) {
         if (isEnabled()) {
           System.out.println("autocorrect Step 4");
         }
-        letsRoll.driveCartesian(-.36, 0.0, 0, 0.0);
+       // letsRoll.driveCartesian(-.36, 0.0, 0, 0.0);
         // If on the right side of target, go left
       } else if (camarea > 0 && camarea < 19.4) {
         if (isEnabled()) {
           System.out.println("autocorrect Step 5");
         }
         // We need to change the areas above because of the camera's new postition
-        letsRoll.driveCartesian(0, .5, 0, 0.0);
+        //letsRoll.driveCartesian(0, .5, 0, 0.0);
         encoder1.reset();
       } else {
         if (isEnabled()) {
@@ -387,7 +387,7 @@ public class Robot extends TimedRobot {
       // If the front limit switch is not pressed, move the claw forward
     } else {
       forwardMid = false;
-      letsRoll.driveCartesian(0, 0, 0);
+      //letsRoll.driveCartesian(0, 0, 0);
       retreatVariable = true;
       encoder1.reset();
     }
@@ -402,7 +402,7 @@ public class Robot extends TimedRobot {
       // If the front limit switch is not pressed, move the claw forward
     } else {
       forwardLow = false;
-      letsRoll.driveCartesian(0, 0, 0);
+      //letsRoll.driveCartesian(0, 0, 0);
       retreatVariable = true;
       encoder1.reset();
       // Don't repeat this method, stop, prepare to pinchAndRetreat
@@ -422,7 +422,7 @@ public class Robot extends TimedRobot {
       // solenoid.set(true);
       // Makes sure the claw is open
     } else if (distance > -10) {
-      letsRoll.driveCartesian(0, -.5, 0);
+      //letsRoll.driveCartesian(0, -.5, 0);
       // Moves backwards until the encoder is low enough
     } else if (limitBack.get() == false) {
       Spike.set(Value.kReverse);
@@ -438,7 +438,7 @@ public class Robot extends TimedRobot {
     clawOpen = false;
     solenoid.set(false);
     if (distance > -10) {
-      letsRoll.driveCartesian(0, -.5, 0);
+      //letsRoll.driveCartesian(0, -.5, 0);
       // Move back until the encoder gets to -10
     } else {
       retreatVariable = false;
@@ -521,7 +521,7 @@ public class Robot extends TimedRobot {
       pinchAndRetreat();
     } else if (flippyBoi == true) {
       climbByFlipping();
-    } else {
+   /* } else {
       if (Math.abs(Xbox.getY(Hand.kLeft)) > .5 || Math.abs(Xbox.getX(Hand.kLeft)) > .5) {
         letsRoll.driveCartesian(Xbox.getX(Hand.kLeft), Xbox.getY(Hand.kLeft) * -1, Xbox.getX(Hand.kRight), 0.0);
       } else if (Math.abs(Xbox.getY(Hand.kRight)) < .5 && (Math.abs(Xbox.getY(Hand.kRight)) > .15)
@@ -534,7 +534,7 @@ public class Robot extends TimedRobot {
       }
       // gives us control with more precision at low speed
     }
-  }
+  } */
 
   private void manualOverride() {
     if (Math.abs(Xbox.getY(Hand.kLeft)) > .5 || Math.abs(Xbox.getX(Hand.kLeft)) > .5) {
