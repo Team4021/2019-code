@@ -11,12 +11,16 @@ import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.XboxController;
+//import java.io.FileWriter;
+//import java.io.IOException;
+//import java.io.PrintWriter;
+
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableEntry;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.GenericHID.Hand;
 import edu.wpi.first.wpilibj.Relay.Value;
-import edu.wpi.first.wpilibj.Spark;
+import edu.wpi.first.wpilibj.VictorSP;
 import edu.wpi.first.wpilibj.drive.MecanumDrive;
 import edu.wpi.first.wpilibj.Encoder;
 import edu.wpi.first.wpilibj.Compressor;
@@ -33,6 +37,8 @@ import edu.wpi.first.wpilibj.Relay;
  * project.
  */
 public class Robot extends TimedRobot {
+  private static final String limelightMethod = "Limelight";
+  private static final String jackdrive = "Manual Override";
   private String m_autoSelected;
   private final SendableChooser<String> m_chooser = new SendableChooser<>();
   // The following line is getting variables from the limelight
@@ -55,8 +61,13 @@ public class Robot extends TimedRobot {
   NetworkTableEntry ts = table.getEntry("ts");
   private MecanumDrive letsRoll;
   private XboxController Xbox;
+  double camx;
+  double camy;
+  double camarea;
+  double targetRotation;
   double distance;
   double ledMode = 0;
+  double cammode = 0;
   double PSI;
   boolean rotationButtonLow = false;
   boolean rotationButtonMid = false;
@@ -66,20 +77,21 @@ public class Robot extends TimedRobot {
   boolean forwardTop = false;
   boolean forwardMid = false;
   boolean forwardLow = false;
-  boolean forwardPickup = false;
+  boolean forwardPickup;
   boolean clawOpen = true;
   boolean strafeButton = false;
   boolean panelVariable = false;
   boolean flippyBoi = false;
+  boolean runCompress = true;
   float Kp;
-  Spark rearleft;
-  Spark rearright;
-  Spark frontleft;
-  Spark frontright;
-  Spark liftMotor;
-  Spark liftBot;
-  Spark liftBotSpinRight;
-  Spark liftBotSpinLeft;
+  VictorSP rearleft;
+  VictorSP rearright;
+  VictorSP frontleft;
+  VictorSP frontright;
+  VictorSP liftMotor;
+  VictorSP liftBot;
+  VictorSP liftBotSpinRight;
+  VictorSP liftBotSpinLeft;
   Relay Spike;
   Encoder encoder1;
   Compressor compressor = new Compressor(0);
@@ -90,32 +102,37 @@ public class Robot extends TimedRobot {
   DigitalInput limitTop;
   DigitalInput limitFront;
   DigitalInput limitBack;
-  DigitalInput limitRightWheel;
-  DigitalInput limitLeftWheel;
+  DigitalInput limitWheelFront;
+  DigitalInput limitWheelBack;
+  // FileWriter writer;
+  // PrintWriter printWriter;
 
   /**
    * This function is run when the robot is first started up and should be used
    * for any initialization code.
    */
   @Override
-  public void robotInit() {
-    SmartDashboard.putData("Auto choices", m_chooser);
+  public void robotInit() 
+  {
+    m_chooser.setDefaultOption("limelight", limelightMethod);
+    m_chooser.addOption("JackDrive", jackdrive);
+    SmartDashboard.putData("drive choices", m_chooser);
     limitLow = new DigitalInput(0);
-    limitMid = new DigitalInput(1);
-    limitTop = new DigitalInput(2);
-    limitFront = new DigitalInput(3);
-    limitBack = new DigitalInput(4);
-    limitRightWheel = new DigitalInput(5);
-    limitLeftWheel = new DigitalInput(6);
+    limitMid = new DigitalInput(4);
+    limitTop = new DigitalInput(6);
+    limitFront = new DigitalInput(1);
+    limitBack = new DigitalInput(5);
+    limitWheelFront = new DigitalInput(2);
+    limitWheelBack = new DigitalInput(3);
     // Ports are subject to change,
-    rearleft = new Spark(4); // 3 on prototype
-    rearright = new Spark(3); // 0 on prototype
-    frontleft = new Spark(6); // 2 on prototype
-    frontright = new Spark(2); // 1 prototype
-    liftMotor = new Spark(0); // 4 prototype
-    liftBot = new Spark(5);
-    liftBotSpinLeft = new Spark(1);
-    liftBotSpinRight = new Spark(7);
+    rearleft = new VictorSP(4); // 3 on prototype
+    rearright = new VictorSP(3); // 0 on prototype
+    frontleft = new VictorSP(6); // 2 on prototype
+    frontright = new VictorSP(2); // 1 prototype
+    liftMotor = new VictorSP(0); // 4 prototype
+    liftBot = new VictorSP(5);
+    liftBotSpinLeft = new VictorSP(1);
+    liftBotSpinRight = new VictorSP(7);
     Spike = new Relay(0);
     Xbox = new XboxController(0);
     letsRoll = new MecanumDrive(frontleft, rearleft, frontright, rearright);
@@ -144,64 +161,19 @@ public class Robot extends TimedRobot {
    * and SmartDashboard integrated updating.
    */
   @Override
-  public void robotPeriodic() {
-    SmartDashboard.putBoolean("LimitTop", limitTop.get());
-    SmartDashboard.putBoolean("LimitMid", limitMid.get());
-    SmartDashboard.putBoolean("LimitLow", limitLow.get());
-    SmartDashboard.putBoolean("LimitFront", limitFront.get());
-    SmartDashboard.putBoolean("LimitBack", limitBack.get());
-    SmartDashboard.putBoolean("LimitRight", limitRightWheel.get());
-    SmartDashboard.putBoolean("LimitLeft", limitLeftWheel.get());
-    SmartDashboard.putNumber("Encoder", distance);
-    distance = encoder1.getDistance();
-    // calculating, printing, and putting PSI to SmartDashboard
-    double PSI = 250 * pressureSensor.getVoltage() / 5.0 - 20.0;
-    System.out.println(PSI);
-    SmartDashboard.putNumber("PSI", PSI);
-    // these put our NetworkTableEntries into variables
-    double x = tx.getDouble(0.0);
-    double y = ty.getDouble(0.0);
-    double area = ta.getDouble(0.0);
-    // double longestSide = tlong.getDouble(0.0);
-    // double shortestSide = tshort.getDouble(0.0);
-    // double targetWidth = thor.getDouble(0.0);
-    // double targetHeight = tvert.getDouble(0.0);
-    // double pipeline = getpipe.getDouble(0.0);
-    double targetRotation = ts.getDouble(0.0);
-    SmartDashboard.putNumber("LimelightX", x); // displays x axis from target
-    SmartDashboard.putNumber("LimelightY", y); // displays y axis from target
-    SmartDashboard.putNumber("LimelightArea", area); // displays area of target
-    SmartDashboard.putNumber("LimelightRotation", targetRotation); // displays rotation of target
-    NetworkTableInstance.getDefault().getTable("limelight").getEntry("ledMode").setNumber(0);
-    if (PSI < 115) { // Maximum legal PSI is 120, sometimes overshoots
-      compressor.setClosedLoopControl(true);
-    } else {
-      compressor.setClosedLoopControl(false);
-    }
-    if (clawOpen == true) {
-      solenoid.set(true);
-    } else {
-      solenoid.set(false);
-    }
-
-    if (Xbox.getXButtonPressed()) {
-      rotationButtonTop = true;
-    } // starts panel place on top
-    if (Xbox.getYButtonPressed()) {
-      rotationButtonMid = true;
-    } // starts panel place on Mid
-    if (Xbox.getBButtonPressed()) {
-      rotationButtonLow = true;
-    } // starts panel place on Low
-    if (Xbox.getAButtonPressed()) {
-      panelPickupButton = true;
-    } // starts panel pickup
-    if (Xbox.getRawButtonPressed(5)) {
-      flippyBoi = true;
-    }
-    if (Xbox.getY(Hand.kLeft) > .4 || Xbox.getX(Hand.kLeft) > .4 || Xbox.getX(Hand.kLeft) < -.4
-        || Xbox.getY(Hand.kLeft) < -.4) {
-      // Jumps out of semiautonomous if joystick is moved far enough
+  public void robotPeriodic() 
+  {
+    SmartDashboard.putBoolean("rotationButtonLow " , rotationButtonLow);
+    SmartDashboard.putBoolean("rotationButtonMid " , rotationButtonMid);
+    SmartDashboard.putBoolean("rotationButtonTop " , rotationButtonTop);
+    SmartDashboard.putBoolean("panelPickupButton " , panelPickupButton);
+    SmartDashboard.putBoolean("forwardTop " , forwardTop);
+    SmartDashboard.putBoolean("forwardMid " , forwardMid);
+    SmartDashboard.putBoolean("forwardLow " , forwardLow);
+    SmartDashboard.putBoolean("forwardPickup " , forwardPickup);
+    SmartDashboard.putBoolean("retreatVariable " , retreatVariable);
+    if (Xbox.getRawButton(7)) 
+    {
       rotationButtonLow = false;
       rotationButtonMid = false;
       rotationButtonTop = false;
@@ -212,33 +184,65 @@ public class Robot extends TimedRobot {
       forwardPickup = false;
       retreatVariable = false;
       flippyBoi = false;
-      if (limitLow.get() == false){
-        liftMotor.set(.2);
-      }
-      else liftMotor.set(0);
+    }
+    if (isDisabled()) 
+    {
+      rotationButtonLow = false;
+      rotationButtonMid = false;
+      rotationButtonTop = false;
+      panelPickupButton = false;
+      forwardTop = false;
+      forwardMid = false;
+      forwardLow = false;
+      forwardPickup = false;
+      retreatVariable = false;
+      flippyBoi = false;
     }
 
-    if (rotationButtonTop == true || rotationButtonMid == true || rotationButtonLow == true
-        || panelPickupButton == true) {
-      // If any buttons are true, go to autoCorrect
-      // They go below because they are different variables
-      autoCorrect(targetRotation, x, area);
-    } else if (forwardTop == true) {
-      placeTop();
-      // In these and the following, we go to the desired method
-    } else if (forwardMid == true) {
-      placeMid();
-    } else if (forwardLow == true) {
-      placeLow();
-    } else if (forwardPickup == true) {
-      pickup();
-    } else if (retreatVariable == true) {
-      pinchAndRetreat();
-    } else if (flippyBoi == true) {
-      climbByFlipping();
+    compressor.setClosedLoopControl(true);
+    m_autoSelected = m_chooser.getSelected();
+    SmartDashboard.putBoolean("LimitTop", limitTop.get());
+    SmartDashboard.putBoolean("LimitMid", limitMid.get());
+    SmartDashboard.putBoolean("LimitLow", limitLow.get());
+    SmartDashboard.putBoolean("LimitFront", limitFront.get());
+    SmartDashboard.putBoolean("LimitBack", limitBack.get());
+    SmartDashboard.putBoolean("LimitWheelFront", limitWheelFront.get());
+    SmartDashboard.putBoolean("LimitWheelback", limitWheelBack.get());
+    SmartDashboard.putNumber("Encoder", distance);
+    distance = encoder1.getDistance();
+    // calculating, printing, and putting PSI to SmartDashboard
+    // these put our NetworkTableEntries into variables
+    camx = tx.getDouble(0.0);
+    camy = ty.getDouble(0.0);
+    camarea = ta.getDouble(0.0);
+    // double longestSide = tlong.getDouble(0.0);
+    // double shortestSide = tshort.getDouble(0.0);
+    // double targetWidth = thor.getDouble(0.0);
+    // double targetHeight = tvert.getDouble(0.0);
+    // double pipeline = getpipe.getDouble(0.0);
+    targetRotation = ts.getDouble(0.0);
+    SmartDashboard.putNumber("LimelightX", camx); // displays x axis from target
+    SmartDashboard.putNumber("LimelightY", camy); // displays y axis from target
+    SmartDashboard.putNumber("LimelightArea", camarea); // displays area of target
+    SmartDashboard.putNumber("LimelightRotation", targetRotation); // displays rotation of target
+    NetworkTableInstance.getDefault().getTable("limelight").getEntry("ledMode").setNumber(0);
+    NetworkTableInstance.getDefault().getTable("limelight").getEntry("camMode").setNumber(0);
+    if (clawOpen == true) 
+    {
+      solenoid.set(true);
     } else {
-      letsRoll.driveCartesian(Xbox.getX(Hand.kLeft), Xbox.getY(Hand.kLeft) * -1, Xbox.getX(Hand.kRight), 0.0);
-      // gives us control
+      solenoid.set(false);
+    }
+    // System.out.println("auto select is " + m_autoSelected);
+    switch (m_autoSelected) 
+    {
+      case limelightMethod: Normal();
+           break;
+      
+      case jackdrive:
+      default:
+      manualOverride();
+      break;
     }
   }
 
@@ -256,10 +260,10 @@ public class Robot extends TimedRobot {
    */
   @Override
   public void autonomousInit() {
-    m_autoSelected = m_chooser.getSelected();
+    //m_autoSelected = m_chooser.getSelected();
     // autoSelected = SmartDashboard.getString("Auto Selector",
     // defaultAuto);
-    System.out.println("Auto selected: " + m_autoSelected);
+    // System.out.println("Auto selected: " + m_autoSelected);
   }
 
   /**
@@ -281,59 +285,143 @@ public class Robot extends TimedRobot {
    * This function is called periodically during test mode.
    */
   @Override
-  public void testPeriodic() {
+  public void testPeriodic() 
+  {
   }
 
-  private void autoCorrect(double targetRotation, double x, double area) {
-    if (Math.abs(targetRotation) > 45 && Math.abs(targetRotation) < 89) {
-      // arc right
-      letsRoll.driveCartesian(.3, 0.0, -.125, 0.0);
-    } else if (Math.abs(targetRotation) < 45 && Math.abs(targetRotation) > 1) {
-      letsRoll.driveCartesian(-.3, 0.0, .125, 0.0);
+  private void autoCorrect() 
+  {
+    if (Xbox.getRawButton(5)) 
+    {
+      clawOpen = true;
+    } 
+    else if (Xbox.getRawButton(6)) 
+    {
+      clawOpen = false;
+    }
+
+    if (isEnabled())
+    {
+      System.out.println("autocorrect engaged" + ", targetRotation " + targetRotation + ", area " + camarea + ", x " + camx);
+    }
+
+    if (Math.abs(targetRotation) >= 75 && Math.abs(targetRotation) <= 89) 
+    {
+      if (isEnabled())
+      {
+        System.out.println("autocorrect Step 1"); 
+      }
       // arc left
-    } else if (targetRotation < -88 || targetRotation > -2) {
-      if (x < -1) {
+      letsRoll.driveCartesian(.3, 0.0, .125, 0.0);
+    }
+    else if (Math.abs(targetRotation) >= 1 && Math.abs(targetRotation) <= 15) 
+    {
+      if (isEnabled())
+      {
+        System.out.println("autocorrect Step 2");
+      }
+      letsRoll.driveCartesian(-.3, 0.0, -.125, 0.0);
+       // arc right
+    } 
+    else 
+    { 
+      if (isEnabled())
+      {
+        System.out.println("autocorrect Step 3");
+      }
+      if (camx < -1.5) 
+      {
         letsRoll.driveCartesian(-.36, 0.0, 0, 0.0);
         // If on the left side of target, go right
-      } else if (x > 1) {
+      } 
+      else if (camx > 1.5) 
+      {
+        if (isEnabled())
+        {
+          System.out.println("autocorrect Step 4");
+        }
         letsRoll.driveCartesian(.36, 0.0, 0, 0.0);
         // If on the right side of target, go left
-      } else if (area < 1.5 && area > 0) {
+      } 
+      else if (camarea > 0 && camarea < 19.4) 
+      {
+        if (isEnabled())
+        {
+          System.out.println("autocorrect Step 5");
+        }
         // We need to change the areas above because of the camera's new postition
         letsRoll.driveCartesian(0, .5, 0, 0.0);
-      } else {
+        encoder1.reset();
+      } 
+      else 
+      {
+        if (isEnabled())
+        {
+          System.out.println("autocorrect Step 6");
+        }
         frontleft.set(0);
         frontright.set(0);
         rearleft.set(0);
         rearright.set(0);
         encoder1.reset();
-        if (rotationButtonTop == true) {
+        if (rotationButtonTop == true) 
+        {
+          if (isEnabled())
+          {
+            System.out.println("autocorrect Initialize go top");
+          }
           rotationButtonTop = false;
           forwardTop = true;
           // Makes sure we don't do autocorrect again by using different variables, same
           // things below
-        } else if (rotationButtonMid == true) {
+        } 
+        else if (rotationButtonMid == true) 
+        {
+          if (isEnabled())
+          {
+            System.out.println("autocorret Initialize go mid");
+          }
           rotationButtonMid = false;
           forwardMid = true;
-        } else if (rotationButtonLow == true) {
+        } 
+        else if (rotationButtonLow == true) 
+        {
+          if (isEnabled())
+          {
+            System.out.println("autocorrect Initialize go low");
+          }
           rotationButtonLow = false;
           forwardLow = true;
-        } else if (panelPickupButton == true) {
+        } 
+        else if (panelPickupButton == true) 
+        {
+          if (isEnabled())
+          {
+            System.out.println("autocorrect Initialize Pickup");
+          }
           panelPickupButton = false;
           forwardPickup = true;
+          clawOpen = false;
         }
       }
     }
   }
+  
 
-  private void placeTop() { // Test top first!!! Not others
-    if (limitTop.get() == false) {
-      liftMotor.set(-.75);
+  private void placeTop() 
+  { // Test top first!!! Not others
+    if (limitTop.get() == false) 
+    {
+      liftMotor.set(.75);
       // If the top limit switch is not pressed, go up
-    } else if (limitFront.get() == false) {
-      Spike.set(Value.kForward);
+    } 
+    else if (limitFront.get() == false) 
+    {
+      // Spike.set(Value.kForward);
       // If the front limit switch is not pressed, move the claw forward
-    } else {
+    } 
+    else 
+    {
       forwardTop = false;
       letsRoll.driveCartesian(0, 0, 0);
       retreatVariable = true;
@@ -342,72 +430,269 @@ public class Robot extends TimedRobot {
     }
   }
 
-  private void placeMid() {
-    if (distance < 25) {
-      letsRoll.driveCartesian(0, .25, 0);
-    } else {
+  private void placeMid() 
+  {
+    if (limitMid.get() == false) 
+    {
+      liftMotor.set(.75);
+      // If the top limit switch is not pressed, go up
+    } 
+    else if (limitFront.get() == false) 
+    {
+      Spike.set(Value.kForward);
+      // If the front limit switch is not pressed, move the claw forward
+    } 
+    else 
+    {
       forwardMid = false;
       letsRoll.driveCartesian(0, 0, 0);
       retreatVariable = true;
       encoder1.reset();
     }
-
   }
 
-  private void placeLow() {
-    if (distance < 25) {
-      letsRoll.driveCartesian(0, .25, 0);
-    } else {
+  private void placeLow() 
+  {
+    if (limitLow.get() == false) 
+    {
+      liftMotor.set(-.75);
+      // If the top limit switch is not pressed, go down
+    } 
+    else if (limitFront.get() == false) 
+    {
+      Spike.set(Value.kForward);
+      // If the front limit switch is not pressed, move the claw forward
+    } 
+    else 
+    {
       forwardLow = false;
       letsRoll.driveCartesian(0, 0, 0);
       retreatVariable = true;
       encoder1.reset();
+      // Don't repeat this method, stop, prepare to pinchAndRetreat
     }
-
   }
 
-  private void pickup() {
-    if (limitLow.get() == false) {
-      liftMotor.set(0.2);
+  private void pickup() 
+  {
+    if (limitLow.get() == false) 
+    {
+      liftMotor.set(-.36);
       // If the lift isn't in the lowest setting (sensed by limit switch) go down
-    } else if (limitFront.get() == false && clawOpen == false) {
+    } 
+    else if (limitFront.get() == false && clawOpen == false) 
+    {
       Spike.set(Value.kForward);
       // If the claw isn't forward and isn't open, move the claw forward (and
       // statement explained below)
-    } else if (clawOpen == false) {
+    } 
+    else if (clawOpen == false) 
+    {
       clawOpen = true;
+      //solenoid.set(true);
       // Makes sure the claw is open
-    } else if (distance > -10) {
+    } else if (distance > -10) 
+    {
       letsRoll.driveCartesian(0, -.5, 0);
       // Moves backwards until the encoder is low enough
-    } else if (limitBack.get() == false) {
+    } 
+    else if (limitBack.get() == false) 
+    {
       Spike.set(Value.kReverse);
       // If the claw isn't in the back position, move back. If we didn't have the and
       // statement, it would get stuck going back and forth between these statements
-    } else {
+    } 
+    else 
+    {
       forwardPickup = false;
       // Don't repeat this method
     }
   }
 
-  private void pinchAndRetreat() {
+  private void pinchAndRetreat() 
+  {
     clawOpen = false;
-    if (distance > -10) {
+    solenoid.set(false);
+    if (distance > -10) 
+    {
       letsRoll.driveCartesian(0, -.5, 0);
       // Move back until the encoder gets to -10
-    } else {
+    } else 
+    {
       retreatVariable = false;
       // Don't repeat this method
     }
-
   }
 
-  private void climbByFlipping() {
+  private void climbByFlipping() 
+  {
     encoder1.reset();
 
     // Move claw back
     // Put "flippers" down
     // Spin right and left side wheels, and normal drive
     // When at the top, stop
+  }
+
+  private void Normal() 
+  {
+    if (Xbox.getXButtonPressed()) 
+    {
+      rotationButtonTop = true;
+    } // starts panel place on top
+    if (Xbox.getYButtonPressed()) 
+    {
+      rotationButtonMid = true;
+    } // starts panel place on Mid
+    if (Xbox.getBButtonPressed()) 
+    {
+      rotationButtonLow = true;
+    } // starts panel place on Low
+    if (Xbox.getAButtonPressed()) 
+    {
+      panelPickupButton = true;
+    } // starts panel pickup
+    /*
+     * if (Xbox.getRawButtonPressed(5)) { flippyBoi = true; }
+     */
+    if (Xbox.getY(Hand.kLeft) > .4 || Xbox.getX(Hand.kLeft) > .4 || Xbox.getX(Hand.kLeft) < -.4
+        || Xbox.getY(Hand.kLeft) < -.4) 
+    {
+          // Jumps out of semiautonomous if joystick is moved far enough
+      System.out.println("Failsafe activated");
+      rotationButtonLow = false;
+      rotationButtonMid = false;
+      rotationButtonTop = false;
+      panelPickupButton = false;
+      forwardTop = false;
+      forwardMid = false;
+      forwardLow = false;
+      forwardPickup = false;
+      retreatVariable = false;
+      flippyBoi = false;
+    }
+    if (isEnabled()) 
+    {
+      System.out.println("Line 407: rotationbuttonTop = " + rotationButtonTop + ", rotationbuttonMid = "
+      + rotationButtonMid + ", rotationbuttonLow = " + rotationButtonLow + ", panelPickupButton = "
+      + panelPickupButton + ", flipper = " + flippyBoi);
+      System.out.println("Line 408: forwardTop = " + forwardTop + ", forwardMid = " + forwardMid + ", forwardLow = "
+      + forwardLow + ", forwardPickup = " + forwardPickup + ", retreatVariable = " + retreatVariable
+      + ", flippyBoi = " + flippyBoi);
+    }
+    // printWriter.printf("Line 407: rotationbuttonTop = " + rotationButtonTop + ",
+    // rotationbuttonMid = " + rotationButtonMid + ", rotationbuttonLow = " +
+    // rotationButtonLow + ", panelPickupButton = " + panelPickupButton + ", flipper
+    // = " + flippyBoi);
+    
+    if (rotationButtonTop == true || rotationButtonMid == true || rotationButtonLow == true || panelPickupButton == true) 
+    {
+      // If any buttons are true, go to autoCorrect
+      // They go below because they are different variables
+      camx = tx.getDouble(0.0);
+      camy = ty.getDouble(0.0);
+      camarea = ta.getDouble(0.0);
+      targetRotation = ts.getDouble(0.0);
+      autoCorrect();
+    } 
+    else if (forwardTop == true) 
+    {
+      placeTop();
+      // In these and the following, we go to the desired method
+    } 
+    else if (forwardMid == true) 
+    {
+      placeMid();
+    } 
+    else if (forwardLow == true) 
+    {
+      placeLow();
+    } 
+    else if (forwardPickup == true) 
+    {
+      pickup();
+    } 
+    else if (retreatVariable == true) 
+    {
+      pinchAndRetreat();
+    } 
+    else if (flippyBoi == true) 
+    {
+      climbByFlipping();
+    } else {
+      if (Math.abs(Xbox.getY(Hand.kLeft)) > .5 || Math.abs(Xbox.getX(Hand.kLeft)) > .5) {
+        letsRoll.driveCartesian(Xbox.getX(Hand.kLeft), Xbox.getY(Hand.kLeft) * -1, Xbox.getX(Hand.kRight), 0.0);
+         } else if (Math.abs(Xbox.getY(Hand.kRight)) < .5 &&  (Math.abs(Xbox.getY(Hand.kRight)) > .15) || Math.abs(Xbox.getX(Hand.kRight)) < .5 &&  (Math.abs(Xbox.getY(Hand.kRight)) > .15)) {
+          letsRoll.driveCartesian(Xbox.getX(Hand.kLeft) * .5, Xbox.getY(Hand.kLeft) * -.5, Xbox.getX(Hand.kRight) * .5, 0.0);
+         }
+         else {
+          letsRoll.driveCartesian(Xbox.getX(Hand.kLeft) * .5, Xbox.getY(Hand.kLeft) * -.5, Xbox.getX(Hand.kRight) * .5, 0.0);
+        }
+      // gives us control with more precision at low speed
+    }
+  }
+  private void manualOverride() {
+    if (Math.abs(Xbox.getY(Hand.kLeft)) > .5 || Math.abs(Xbox.getX(Hand.kLeft)) > .5) {
+      letsRoll.driveCartesian(Xbox.getX(Hand.kLeft), Xbox.getY(Hand.kLeft) * -1, Xbox.getX(Hand.kRight), 0.0);
+       } else if (Math.abs(Xbox.getY(Hand.kRight)) < .5 &&  (Math.abs(Xbox.getY(Hand.kRight)) > .15) || Math.abs(Xbox.getX(Hand.kRight)) < .5 &&  (Math.abs(Xbox.getY(Hand.kRight)) > .15)) {
+        letsRoll.driveCartesian(Xbox.getX(Hand.kLeft) * .5, Xbox.getY(Hand.kLeft) * -.5, Xbox.getX(Hand.kRight) * .5, 0.0);
+       } else {
+        letsRoll.driveCartesian(Xbox.getX(Hand.kLeft) * .5, Xbox.getY(Hand.kLeft) * -.5, Xbox.getX(Hand.kRight) * .5, 0.0);
+      }
+    if (Xbox.getAButton() && limitFront.get() == false) {
+      Spike.set(Relay.Value.kForward);
+    }
+    else if (Xbox.getBButton() && limitBack.get() == false) 
+    {
+      Spike.set(Relay.Value.kReverse);
+    }
+    else 
+    {
+      Spike.set(Relay.Value.kOff);
+    }
+
+    if (Xbox.getTriggerAxis(Hand.kRight) > 0 && limitTop.get() == false) 
+    {
+      liftMotor.set(Xbox.getTriggerAxis(Hand.kRight));
+    } 
+    else if (Xbox.getTriggerAxis(Hand.kLeft) > 0 && limitLow.get() == false) 
+    {
+      liftMotor.set(-Xbox.getTriggerAxis(Hand.kLeft) / 2);
+    } 
+    else 
+    {
+      liftMotor.set(0);
+    }
+
+    if (Xbox.getRawButton(5)) 
+    {
+      clawOpen = true;
+    } 
+    else if (Xbox.getRawButton(6)) 
+    {
+      clawOpen = false;
+    }
+
+    if (Xbox.getYButton() && limitWheelBack.get() == false) 
+    {
+      liftBot.set(.5);
+      liftBotSpinLeft.set(-.5);
+      liftBotSpinRight.set(.5);
+    } 
+    else if (Xbox.getYButton() && limitWheelBack.get() == true) 
+    {
+      liftBotSpinLeft.set(-.5);
+      liftBotSpinRight.set(.5);
+    } 
+    else if (Xbox.getXButton() && limitWheelFront.get() == false) 
+    {
+      liftBot.set(-.5);
+    } 
+    else 
+    {
+      liftBot.set(0);
+      liftBotSpinLeft.set(0);
+      liftBotSpinRight.set(0);
+    }
   }
 }
