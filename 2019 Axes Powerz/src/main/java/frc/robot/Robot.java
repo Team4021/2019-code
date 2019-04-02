@@ -294,47 +294,46 @@ public class Robot extends TimedRobot {
       System.out
           .println("autocorrect engaged" + ", targetRotation " + targetRotation + ", area " + camarea + ", x " + camx);
     }
-
-    if (Math.abs(targetRotation) >= 75 && Math.abs(targetRotation) <= 87) {
+    if (Math.abs(targetRotation) >= 75 && Math.abs(targetRotation) <= 88) {
       if (isEnabled()) {
         System.out.println("autocorrect correcting rotation");
       }
       // arc left
-      letsRoll.driveCartesian(.3, 0.0, .125, 0.0);
-    } else if (Math.abs(targetRotation) >= 3 && Math.abs(targetRotation) <= 15) {
+      letsRoll.driveCartesian(-.3, 0.0, -.125, 0.0);
+    } else if (Math.abs(targetRotation) >= 2 && Math.abs(targetRotation) <= 15) {
       if (isEnabled()) {
         System.out.println("autocorrect correcting rotation");
       }
-      letsRoll.driveCartesian(-.3, 0.0, -.125, 0.0);
+      letsRoll.driveCartesian(.3, 0.0, .125, 0.0);
       // arc right
     } else {
-      if (camx < -1.5) {
+      if (camx > 4) {
         if (isEnabled()) {
           System.out.println("autocorrect Strafe right");
         }
         frontleft.set(strafeSpeed);
+        rearright.set(-strafeSpeed);
         rearleft.set(-strafeSpeed);
         frontright.set(strafeSpeed);
-        rearright.set(-strafeSpeed);
         //letsRoll.driveCartesian(-.36, 0.0, 0, 0.0);
         // If on the left side of target, go right
-      } else if (camx > 1.5) {
+      } else if (camx < -4) {
         if (isEnabled()) {
           System.out.println("autocorrect Strafe left");
         }
-        frontleft.set(strafeSpeed);
-        rearleft.set(-strafeSpeed);
-        frontright.set(strafeSpeed);
-        rearright.set(-strafeSpeed);
+        frontleft.set(-strafeSpeed);
+        rearright.set(strafeSpeed);
+        rearleft.set(strafeSpeed);
+        frontright.set(-strafeSpeed);
         //letsRoll.driveCartesian(.36, 0.0, 0, 0.0);
         // If on the right side of target, go left
-      } else if (camarea >= 0 && camarea < 19.4) {
+      } else if (camarea > 0 && camarea < 19.4) {
         if (isEnabled()) {
           System.out.println("autocorrect move forward");
         }
+        frontright.set(-.25);
         frontleft.set(.25);
         rearleft.set(.25);
-        frontright.set(-.25);
         rearright.set(-.25);
         // We need to change the areas above because of the camera's new postition
         //letsRoll.driveCartesian(0, .3, 0, 0.0);
