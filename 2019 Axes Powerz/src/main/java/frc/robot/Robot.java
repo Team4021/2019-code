@@ -429,6 +429,10 @@ public class Robot extends TimedRobot {
 
   private void pickup() {
     System.out.println("Into pickup" + ", targetRotation " + targetRotation + ", area " + camarea + ", x " + camx);
+    if (limitBack.get() == false && clawOpen == true) {
+      clawOpen = false;
+      solenoid.set(false);
+    }
     if (limitLow.get() == false) {
       // liftMotor.set(-.36);
       // If the lift isn't in the lowest setting (sensed by limit switch) go down
@@ -443,10 +447,10 @@ public class Robot extends TimedRobot {
        solenoid.set(true);
       // Makes sure the claw is open
     } else if (distance > -50) {
-      frontright.set(-.25);
+      frontright.set(.25);
       frontleft.set(-.25);
       rearleft.set(-.25);
-      rearright.set(-.25);
+      rearright.set(.25);
       // Moves backwards until the encoder is low enough
       System.out.println("We're into pickup (line 440)");
     } else {
