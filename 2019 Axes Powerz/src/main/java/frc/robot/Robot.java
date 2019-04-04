@@ -26,7 +26,6 @@ import edu.wpi.first.wpilibj.Encoder;
 import edu.wpi.first.wpilibj.Compressor;
 import edu.wpi.first.wpilibj.AnalogInput;
 import edu.wpi.first.wpilibj.Solenoid;
-import edu.wpi.first.wpilibj.Spark;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.Relay;
 
@@ -81,12 +80,12 @@ public class Robot extends TimedRobot {
   float Kp;
   VictorSP rearleft;
   VictorSP rearright;
-  Spark frontleft;
+  VictorSP frontleft;
   VictorSP frontright;
-  Spark liftMotor;
+  VictorSP liftMotor;
   VictorSP liftBot;
   VictorSP liftBotSpinRight;
-  Spark liftBotSpinLeft;
+  VictorSP liftBotSpinLeft;
   Relay Spike;
   Encoder encoder1;
   Compressor compressor = new Compressor(0);
@@ -120,14 +119,14 @@ public class Robot extends TimedRobot {
     limitWheelFront = new DigitalInput(2);
     limitWheelBack = new DigitalInput(3);
     // Ports are subject to change,
-    rearleft = new VictorSP(7); // 3 on prototype
+    rearleft = new VictorSP(4); // 3 on prototype
     rearright = new VictorSP(3); // 0 on prototype
-    frontleft = new Spark(4); // 2 on prototype
-    frontright = new VictorSP(0); // 1 prototype
-    liftMotor = new Spark(5); // 4 prototype
-    liftBot = new VictorSP(2);
-    liftBotSpinLeft = new Spark(6);
-    liftBotSpinRight = new VictorSP(1);
+    frontleft = new VictorSP(6); // 2 on prototype
+    frontright = new VictorSP(2); // 1 prototype
+    liftMotor = new VictorSP(0); // 4 prototype
+    liftBot = new VictorSP(5);
+    liftBotSpinLeft = new VictorSP(1);
+    liftBotSpinRight = new VictorSP(7);
     Spike = new Relay(0);
     Xbox = new XboxController(0);
     letsRoll = new MecanumDrive(frontleft, rearleft, frontright, rearright);
@@ -294,7 +293,7 @@ public class Robot extends TimedRobot {
       System.out
           .println("autocorrect engaged" + ", targetRotation " + targetRotation + ", area " + camarea + ", x " + camx);
     }
-    if (Math.abs(targetRotation) >= 75 && Math.abs(targetRotation) <= 88) {
+   /* * if (Math.abs(targetRotation) >= 75 && Math.abs(targetRotation) <= 88) {
       if (isEnabled()) {
         System.out.println("autocorrect correcting rotation");
       }
@@ -306,7 +305,7 @@ public class Robot extends TimedRobot {
       }
       letsRoll.driveCartesian(.3, 0.0, .125, 0.0);
       // arc right
-    } else {
+    } else {  */
       if (camx > 4) {
         if (isEnabled()) {
           System.out.println("autocorrect Strafe right");
@@ -377,7 +376,7 @@ public class Robot extends TimedRobot {
         }
       }
     }
-  }
+ // } This guy was left over after commenting out rotation
 
   private void placeTop() { // Test top first!!! Not others
     if (limitTop.get() == false) {
@@ -588,14 +587,14 @@ public class Robot extends TimedRobot {
       clawOpen = false;
     }
 
-    if (Xbox.getYButton() && limitWheelBack.get() == true) {
+    if (Xbox.getYButton() && limitWheelBack.get() == false) {
       liftBot.set(.5);
       liftBotSpinLeft.set(-.5);
       liftBotSpinRight.set(.5);
-    } else if (Xbox.getYButton() && limitWheelBack.get() == false) {
+    } else if (Xbox.getYButton() && limitWheelBack.get() == true) {
       liftBotSpinLeft.set(-.5);
       liftBotSpinRight.set(.5);
-    } else if (Xbox.getXButton() && limitWheelFront.get() == true) {
+    } else if (Xbox.getXButton() && limitWheelFront.get() == false) {
       liftBot.set(-.5);
     } else {
       liftBot.set(0);
