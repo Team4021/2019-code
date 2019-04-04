@@ -165,6 +165,7 @@ public class Robot extends TimedRobot {
     SmartDashboard.putBoolean("forwardLow ", forwardLow);
     SmartDashboard.putBoolean("forwardPickup ", forwardPickup);
     SmartDashboard.putBoolean("retreatVariable ", retreatVariable);
+    SmartDashboard.putBoolean("clawOpen", clawOpen);
     if (Xbox.getRawButton(7)) {
       rotationButtonLow = false;
       rotationButtonMid = false;
@@ -320,13 +321,13 @@ public class Robot extends TimedRobot {
         if (isEnabled()) {
           System.out.println("autocorrect Strafe left");
         }
-        frontleft.set(-strafeSpeed);
-        rearright.set(strafeSpeed);
-        rearleft.set(strafeSpeed);
-        frontright.set(-strafeSpeed);
+        frontleft.set(strafeSpeed);
+        rearright.set(-strafeSpeed);
+        rearleft.set(-strafeSpeed);
+        frontright.set(strafeSpeed);
         //letsRoll.driveCartesian(.36, 0.0, 0, 0.0);
         // If on the right side of target, go left
-      } else if (camarea > 0 && camarea < 19.4) {
+      } else if (camarea > 0 && camarea < 18) {
         if (isEnabled()) {
           System.out.println("autocorrect move forward");
         }
@@ -373,6 +374,7 @@ public class Robot extends TimedRobot {
           panelPickupButton = false;
           forwardPickup = true;
           clawOpen = false;
+          solenoid.set(false);
         }
       }
     }
@@ -380,10 +382,10 @@ public class Robot extends TimedRobot {
 
   private void placeTop() { // Test top first!!! Not others
     if (limitTop.get() == false) {
-      // liftMotor.set(.75);
+       liftMotor.set(.75);
       // If the top limit switch is not pressed, go up
     } else if (limitFront.get() == false) {
-      // Spike.set(Value.kForward);
+       Spike.set(Value.kForward);
       // If the front limit switch is not pressed, move the claw forward
     } else {
       forwardTop = false;
@@ -396,7 +398,7 @@ public class Robot extends TimedRobot {
 
   private void placeMid() {
     if (limitMid.get() == false) {
-      // liftMotor.set(.75);
+       liftMotor.set(.75);
       // If the top limit switch is not pressed, go up
     } else if (limitFront.get() == false) {
       Spike.set(Value.kForward);
@@ -411,7 +413,7 @@ public class Robot extends TimedRobot {
 
   private void placeLow() {
     if (limitLow.get() == false) {
-      // liftMotor.set(-.75);
+       liftMotor.set(-.75);
       // If the top limit switch is not pressed, go down
     } else if (limitFront.get() == false) {
       Spike.set(Value.kForward);
@@ -430,22 +432,23 @@ public class Robot extends TimedRobot {
     if (limitLow.get() == false) {
       // liftMotor.set(-.36);
       // If the lift isn't in the lowest setting (sensed by limit switch) go down
-    } else if (limitFront.get() == false && clawOpen == false) {
-      Spike.set(Value.kForward);
+    } else {
+    //  liftMotor.set(0);
+    } if (limitBack.get() == false && clawOpen == false) {
+      Spike.set(Value.kReverse);
       // If the claw isn't forward and isn't open, move the claw forward (and
       // statement explained below)
     } else if (clawOpen == false) {
       clawOpen = true;
-      // solenoid.set(true);
+       solenoid.set(true);
       // Makes sure the claw is open
-    } else if (distance > -10) {
-      // letsRoll.driveCartesian(0, -.5, 0);
+    } else if (distance > -50) {
+      frontright.set(-.25);
+      frontleft.set(-.25);
+      rearleft.set(-.25);
+      rearright.set(-.25);
       // Moves backwards until the encoder is low enough
       System.out.println("We're into pickup (line 440)");
-    } else if (limitBack.get() == false) {
-      Spike.set(Value.kReverse);
-      // If the claw isn't in the back position, move back. If we didn't have the and
-      // statement, it would get stuck going back and forth between these statements
     } else {
       forwardPickup = false;
       // Don't repeat this method
@@ -474,18 +477,19 @@ public class Robot extends TimedRobot {
   }
 
   private void Normal() {
-    if (Xbox.getXButtonPressed()) {
+    if (Xbox.getAButton()) {
+      panelPickupButton = true;
+    }
+    else if (Xbox.getXButton()) {
       rotationButtonTop = true;
     } // starts panel place on top
-    if (Xbox.getYButtonPressed()) {
+    else if (Xbox.getYButton()) {
       rotationButtonMid = true;
     } // starts panel place on Mid
-    if (Xbox.getBButtonPressed()) {
+    else if (Xbox.getBButton()) {
       rotationButtonLow = true;
     } // starts panel place on Low
-    if (Xbox.getAButtonPressed()) {
-      panelPickupButton = true;
-    } // starts panel pickup
+    // starts panel pickup
     /*
      * if (Xbox.getRawButtonPressed(5)) { flippyBoi = true; }
      */
