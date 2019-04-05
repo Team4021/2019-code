@@ -39,7 +39,7 @@ import edu.wpi.first.wpilibj.Relay;
 public class Robot extends TimedRobot {
   private static final String limelightMethod = "Limelight";
   private static final String jackdrive = "Manual Override";
-  private String m_autoSelected;
+  private String m_autoSelected = limelightMethod;
   private final SendableChooser<String> m_chooser = new SendableChooser<>();
   // The following line is getting variables from the limelight
   NetworkTable table = NetworkTableInstance.getDefault().getTable("limelight");
@@ -98,6 +98,8 @@ public class Robot extends TimedRobot {
   DigitalInput limitBack;
   DigitalInput limitWheelFront;
   DigitalInput limitWheelBack;
+  int doubleCheck;
+  int coolDownTimer;
   // FileWriter writer;
   // PrintWriter printWriter;
   double strafeSpeed;
@@ -110,7 +112,6 @@ public class Robot extends TimedRobot {
   public void robotInit() {
     m_chooser.setDefaultOption("limelight", limelightMethod);
     m_chooser.addOption("JackDrive", jackdrive);
-    SmartDashboard.putData("drive choices", m_chooser);
     limitLow = new DigitalInput(0);
     limitMid = new DigitalInput(4);
     limitTop = new DigitalInput(6);
@@ -143,6 +144,8 @@ public class Robot extends TimedRobot {
     encoder1.setDistancePerPulse(.062);
     encoder1.setReverseDirection(false);
     encoder1.setSamplesToAverage(7);
+    coolDownTimer = 0;
+    doubleCheck = 0;
   }
 
   /**
@@ -166,6 +169,15 @@ public class Robot extends TimedRobot {
     SmartDashboard.putBoolean("forwardPickup ", forwardPickup);
     SmartDashboard.putBoolean("retreatVariable ", retreatVariable);
     SmartDashboard.putBoolean("clawOpen", clawOpen);
+    SmartDashboard.putString("drive choices", m_autoSelected);
+    coolDownTimer++;
+    if (m_autoSelected == limelightMethod && Xbox.getRawButtonPressed(8) && coolDownTimer > 25){
+      m_autoSelected = jackdrive;
+      coolDownTimer = 0;
+    } else if (m_autoSelected == jackdrive && Xbox.getRawButtonPressed(8) && coolDownTimer > 25) {
+      m_autoSelected = limelightMethod;
+      coolDownTimer = 0;
+    }
     if (Xbox.getRawButton(7)) {
       rotationButtonLow = false;
       rotationButtonMid = false;
@@ -192,7 +204,6 @@ public class Robot extends TimedRobot {
     }
 
     compressor.setClosedLoopControl(true);
-    m_autoSelected = m_chooser.getSelected();
     SmartDashboard.putBoolean("LimitTop", limitTop.get());
     SmartDashboard.putBoolean("LimitMid", limitMid.get());
     SmartDashboard.putBoolean("LimitLow", limitLow.get());
@@ -302,7 +313,7 @@ public class Robot extends TimedRobot {
       letsRoll.driveCartesian(.3, 0.0, .125, 0.0);
       // arc right
     } else {  */
-      if (camx > 4) {
+      if (camx > 2.3) {
         if (isEnabled()) {
           System.out.println("autocorrect Strafe right");
         }
@@ -312,7 +323,7 @@ public class Robot extends TimedRobot {
         frontright.set(strafeSpeed);
         //letsRoll.driveCartesian(-.36, 0.0, 0, 0.0);
         // If on the left side of target, go right
-      } else if (camx < -4) {
+      } else if (camx < -2.3) {
         if (isEnabled()) {
           System.out.println("autocorrect Strafe left");
         }
@@ -322,7 +333,12 @@ public class Robot extends TimedRobot {
         frontright.set(strafeSpeed);
         //letsRoll.driveCartesian(.36, 0.0, 0, 0.0);
         // If on the right side of target, go left
-      } else if (camarea > 0 && camarea < 18) {
+      } else if ((camarea > 0 && camarea < 18) || doubleCheck < 150) {
+       letsRoll.driveCartesian(0, .25, 0);
+       doubleCheck++;
+       if(camarea > 0 && camarea < 18){
+         doubleCheck = 0;
+       }
         if (isEnabled()) {
           System.out.println("autocorrect move forward");
         }
@@ -330,10 +346,6 @@ public class Robot extends TimedRobot {
           clawOpen = false;
           solenoid.set(false);
         }
-        frontright.set(-.25);
-        frontleft.set(.25);
-        rearleft.set(.25);
-        rearright.set(-.25);
         // We need to change the areas above because of the camera's new postition
         //letsRoll.driveCartesian(0, .3, 0, 0.0);
         encoder1.reset();
@@ -379,7 +391,7 @@ public class Robot extends TimedRobot {
 
   private void placeTop() { // Test top first!!! Not others
     if (limitTop.get() == false) {
-       liftMotor.set(.75);
+       liftMotor.set(.36);
       // If the top limit switch is not pressed, go up
     } else if (limitFront.get() == false) {
        Spike.set(Value.kForward);
@@ -395,7 +407,7 @@ public class Robot extends TimedRobot {
 
   private void placeMid() {
     if (limitMid.get() == false) {
-       liftMotor.set(.75);
+       liftMotor.set(.36);
       // If the top limit switch is not pressed, go up
     } else if (limitFront.get() == false) {
       Spike.set(Value.kForward);
@@ -410,7 +422,7 @@ public class Robot extends TimedRobot {
 
   private void placeLow() {
     if (limitLow.get() == false) {
-       liftMotor.set(-.75);
+       liftMotor.set(-.36);
       // If the top limit switch is not pressed, go down
     } else if (limitFront.get() == false) {
       Spike.set(Value.kForward);
@@ -426,24 +438,23 @@ public class Robot extends TimedRobot {
 
   private void pickup() {
     System.out.println("Into pickup" + ", targetRotation " + targetRotation + ", area " + camarea + ", x " + camx);
-    if (limitBack.get() == false && clawOpen == true) {
-      clawOpen = false;
-      solenoid.set(false);
-    }
+    if (limitFront.get() == false && clawOpen == false) {
+      Spike.set(Value.kForward);
+      // If the claw isn't forward and isn't open, move the claw forward (and
+      // statement explained below)
+    } 
     if (limitLow.get() == false) {
       // liftMotor.set(-.36);
       // If the lift isn't in the lowest setting (sensed by limit switch) go down
     } else {
     //  liftMotor.set(0);
-    } if (limitBack.get() == false && clawOpen == false) {
-      Spike.set(Value.kReverse);
-      // If the claw isn't forward and isn't open, move the claw forward (and
-      // statement explained below)
-    } else if (clawOpen == false) {
+    } if (limitBack.get() == false && clawOpen == true) {
+      clawOpen = false;
+      solenoid.set(false);
+    }
+    else if (distance > -50 && limitFront.get() == true) {
       clawOpen = true;
-       solenoid.set(true);
-      // Makes sure the claw is open
-    } else if (distance > -50) {
+      solenoid.set(true);
       frontright.set(.25);
       frontleft.set(-.25);
       rearleft.set(-.25);
@@ -459,7 +470,7 @@ public class Robot extends TimedRobot {
   private void pinchAndRetreat() {
     clawOpen = false;
     solenoid.set(false);
-    if (distance > -10) {
+    if (distance > -50) {
       letsRoll.driveCartesian(0, -.5, 0);
       // Move back until the encoder gets to -10
     } else {
