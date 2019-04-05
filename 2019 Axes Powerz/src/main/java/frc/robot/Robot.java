@@ -334,7 +334,11 @@ public class Robot extends TimedRobot {
         //letsRoll.driveCartesian(.36, 0.0, 0, 0.0);
         // If on the right side of target, go left
       } else if ((camarea > 0 && camarea < 18) || doubleCheck < 150) {
-       letsRoll.driveCartesian(0, .25, 0);
+        frontright.set(-.25);
+        frontleft.set(.25);
+        rearleft.set(.25);
+        rearright.set(-.25);
+        //letsRoll.driveCartesian(0, .25, 0);
        doubleCheck++;
        if(camarea > 0 && camarea < 18){
          doubleCheck = 0;
@@ -435,10 +439,9 @@ public class Robot extends TimedRobot {
       // Don't repeat this method, stop, prepare to pinchAndRetreat
     }
   }
-
   private void pickup() {
     System.out.println("Into pickup" + ", targetRotation " + targetRotation + ", area " + camarea + ", x " + camx);
-    if (limitFront.get() == false && clawOpen == false) {
+    if (limitFront.get() == false) {
       Spike.set(Value.kForward);
       // If the claw isn't forward and isn't open, move the claw forward (and
       // statement explained below)
