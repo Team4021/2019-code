@@ -284,11 +284,6 @@ public class Robot extends TimedRobot {
   }
 
   private void autoCorrect() {
-    if (Xbox.getRawButton(5)) {
-      clawOpen = true;
-    } else if (Xbox.getRawButton(6)) {
-      clawOpen = false;
-    }
 
     if (isEnabled()) {
       System.out
@@ -330,6 +325,10 @@ public class Robot extends TimedRobot {
       } else if (camarea > 0 && camarea < 18) {
         if (isEnabled()) {
           System.out.println("autocorrect move forward");
+        }
+        if (panelPickupButton == true) {
+          clawOpen = false;
+          solenoid.set(false);
         }
         frontright.set(-.25);
         frontleft.set(.25);
@@ -373,8 +372,6 @@ public class Robot extends TimedRobot {
           }
           panelPickupButton = false;
           forwardPickup = true;
-          clawOpen = false;
-          solenoid.set(false);
         }
       }
     }
